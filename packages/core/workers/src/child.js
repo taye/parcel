@@ -11,6 +11,8 @@ import type {
 } from './types';
 import type {IDisposable} from '@parcel/types';
 import type {WorkerApi} from './WorkerFarm';
+import type {HandleCallRequest} from './types.js';
+import type {HandleFunction} from './Handle.js';
 
 import invariant from 'assert';
 import nullthrows from 'nullthrows';
@@ -30,7 +32,7 @@ export class Child {
   childId: ?number;
   maxConcurrentCalls: number = 10;
   module: ?any;
-  responseId = 0;
+  responseId: number = 0;
   responseQueue: Map<number, ChildCall> = new Map();
   loggerDisposable: IDisposable;
   child: ChildImpl;
@@ -53,7 +55,13 @@ export class Child {
     });
   }
 
-  workerApi = {
+  workerApi: {|
+    callChild?: (childId: number, request: HandleCallRequest) => Promise<mixed>,
+    +callMaster: (CallRequest, ?boolean) => Promise<mixed>,
+    +createReverseHandle: (fn: HandleFunction) => Handle,
+    +getSharedReference: (ref: number) => mixed,
+    +resolveSharedReference: (value: mixed) => ?number,
+  |} = {
     callMaster: (
       request: CallRequest,
       awaitResponse: ?boolean = true,
@@ -242,7 +250,7 @@ export class Child {
     this.loggerDisposable.dispose();
   }
 
-  createReverseHandle(fn: (...args: Array<any>) => mixed) {
+  createReverseHandle(fn: (...args: Array<any>) => mixed): Handle {
     let handle = new Handle({
       fn,
       workerApi: this.workerApi,

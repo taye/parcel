@@ -127,7 +127,7 @@ export default class BundlerRunner {
     return internalBundleGraph;
   }
 
-  async getCacheKey(assetGraph: AssetGraph) {
+  async getCacheKey(assetGraph: AssetGraph): Promise<string> {
     let name = this.config.getBundlerName();
     let {version} = await this.config.getBundler();
 

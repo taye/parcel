@@ -14,6 +14,8 @@ import type {
   BundleGraphNode,
   Dependency,
   DependencyNode,
+  InternalExportSymbolResolution,
+  InternalSymbolResolution,
 } from './types';
 import type AssetGraph from './AssetGraph';
 
@@ -487,7 +489,7 @@ export default class BundleGraph {
     });
   }
 
-  findReachableBundleWithAsset(bundle: Bundle, asset: Asset) {
+  findReachableBundleWithAsset(bundle: Bundle, asset: Asset): ?Bundle {
     let bundleGroups = this.getBundleGroupsContainingBundle(bundle);
 
     for (let bundleGroup of bundleGroups) {
@@ -740,7 +742,11 @@ export default class BundleGraph {
     );
   }
 
-  resolveSymbol(asset: Asset, symbol: Symbol, boundary: ?Bundle) {
+  resolveSymbol(
+    asset: Asset,
+    symbol: Symbol,
+    boundary: ?Bundle,
+  ): InternalSymbolResolution {
     let assetOutside = boundary && !this.bundleHasAsset(boundary, asset);
 
     let identifier = asset.symbols?.get(symbol)?.local;
@@ -831,7 +837,7 @@ export default class BundleGraph {
     };
   }
 
-  getExportedSymbols(asset: Asset) {
+  getExportedSymbols(asset: Asset): Array<InternalExportSymbolResolution> {
     if (!asset.symbols) {
       return [];
     }

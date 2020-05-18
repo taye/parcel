@@ -23,7 +23,7 @@ export async function load(
   config: Config,
   options: PluginOptions,
   logger: PluginLogger,
-) {
+): Promise<void> {
   // Don't look for a custom babel config if inside node_modules
   if (!config.isSource) {
     return buildDefaultBabelConfig(options, config);
@@ -170,7 +170,7 @@ async function buildDefaultBabelConfig(options: PluginOptions, config: Config) {
   await definePluginDependencies(config);
 }
 
-function mergeOptions(result, config?: null | BabelConfig) {
+function mergeOptions(result, config: ?BabelConfig) {
   if (
     !config ||
     ((!config.presets || config.presets.length === 0) &&

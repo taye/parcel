@@ -3,7 +3,7 @@
 import path from 'path';
 import {Transformer} from '@parcel/plugin';
 
-export default new Transformer({
+export default (new Transformer({
   async getConfig({asset}) {
     const config = await asset.getConfig([
       '.pugrc',
@@ -43,4 +43,4 @@ export default new Transformer({
 
     return [asset];
   },
-});
+}): Transformer);

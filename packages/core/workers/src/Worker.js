@@ -31,12 +31,12 @@ export default class Worker extends EventEmitter {
   sharedReferences: Map<number, mixed> = new Map();
 
   calls: Map<number, WorkerCall> = new Map();
-  exitCode = null;
-  callId = 0;
+  exitCode: ?number = null;
+  callId: number = 0;
 
-  ready = false;
-  stopped = false;
-  isStopping = false;
+  ready: boolean = false;
+  stopped: boolean = false;
+  isStopping: boolean = false;
 
   constructor(options: WorkerOpts) {
     super();

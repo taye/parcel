@@ -1,6 +1,6 @@
 // @flow
 import type {FileSystem} from '@parcel/fs';
-import type {FilePath, File} from '@parcel/types';
+import type {FilePath, File, PackageJSON} from '@parcel/types';
 import type {Entry, ParcelOptions} from './types';
 import path from 'path';
 import {isGlob, glob} from '@parcel/utils';
@@ -9,6 +9,12 @@ export type EntryResult = {|
   entries: Array<Entry>,
   files: Array<File>,
 |};
+
+type InternalPackageJSON = {
+  ...PackageJSON,
+  filePath: FilePath,
+  ...
+};
 
 export class EntryResolver {
   fs: FileSystem;
@@ -41,8 +47,10 @@ export class EntryResolver {
     }
 
     if (stat.isDirectory()) {
+      // $FlowFixMe
       let pkg = await this.readPackage(entry);
       if (pkg && typeof pkg.source === 'string') {
+        // $FlowFixMe
         let source = path.join(path.dirname(pkg.filePath), pkg.source);
         try {
           stat = await this.fs.stat(source);
@@ -81,7 +89,7 @@ export class EntryResolver {
     throw new Error(`Unknown entry ${entry}`);
   }
 
-  async readPackage(entry: FilePath) {
+  async readPackage(entry: FilePath): Promise<null | InternalPackageJSON> {
     let content, pkg;
     let pkgFile = path.join(entry, 'package.json');
     try {

@@ -36,7 +36,7 @@ async function warnAboutNodeSassBeingUnsupported(
   }
 }
 
-export default new Transformer({
+export default (new Transformer({
   async getConfig({asset, resolve, options}) {
     let config = await asset.getConfig(['.sassrc', '.sassrc.js'], {
       packageKey: 'sass',
@@ -117,7 +117,7 @@ export default new Transformer({
     asset.setCode(css);
     return [asset];
   },
-});
+}): Transformer);
 
 function resolvePathImporter({resolve}) {
   return function(rawUrl, prev, done) {

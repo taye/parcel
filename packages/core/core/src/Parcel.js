@@ -10,10 +10,11 @@ import type {
   ModuleSpecifier,
   NamedBundle as INamedBundle,
 } from '@parcel/types';
-import type {ParcelOptions} from './types';
+import type {Bundle, ParcelOptions} from './types';
 import type {FarmOptions} from '@parcel/workers';
 import type {Diagnostic} from '@parcel/diagnostic';
 import type {AbortSignal} from 'abortcontroller-polyfill/dist/cjs-ponyfill';
+import typeof ParcelConfig from './ParcelConfig';
 
 import invariant from 'assert';
 import ThrowableDiagnostic, {anyToDiagnostic} from '@parcel/diagnostic';
@@ -40,24 +41,34 @@ import {PromiseQueue} from '@parcel/utils';
 
 registerCoreWithSerializer();
 
-export const INTERNAL_TRANSFORM = Symbol('internal_transform');
-export const INTERNAL_RESOLVE = Symbol('internal_resolve');
+export const INTERNAL_TRANSFORM: symbol = Symbol('internal_transform');
+export const INTERNAL_RESOLVE: symbol = Symbol('internal_resolve');
 
 export default class Parcel {
-  #assetGraphBuilder; // AssetGraphBuilder
-  #runtimesAssetGraphBuilder; // AssetGraphBuilder
-  #bundlerRunner; // BundlerRunner
-  #packagerRunner; // PackagerRunner
-  #config;
-  #farm; // WorkerFarm
-  #initialized = false; // boolean
-  #initialOptions; // InitialParcelOptions;
-  #reporterRunner; // ReporterRunner
-  #resolvedOptions = null; // ?ParcelOptions
-  #runPackage; // (bundle: IBundle, bundleGraph: InternalBundleGraph) => Promise<Stats>;
-  #watchAbortController; // AbortController
-  #watchQueue = new PromiseQueue<?BuildEvent>({maxConcurrent: 1}); // PromiseQueue<?BuildEvent>
-  #watchEvents = new ValueEmitter<
+  #assetGraphBuilder: AssetGraphBuilder;
+  #runtimesAssetGraphBuilder: AssetGraphBuilder;
+  #bundlerRunner: BundlerRunner;
+  #packagerRunner: PackagerRunner;
+  #config: ParcelConfig;
+  #farm: WorkerFarm;
+  #initialized /*: boolean */ = false;
+  #initialOptions: InitialParcelOptions;
+  #reporterRunner: ReporterRunner;
+  #resolvedOptions: ?ParcelOptions = null;
+  #watchAbortController: AbortController;
+  #watchQueue /*: PromiseQueue<?BuildEvent> */ = new PromiseQueue<?BuildEvent>({
+    maxConcurrent: 1,
+  });
+  #watchEvents /*: ValueEmitter<
+    | {|
+        +error: Error,
+        +buildEvent?: void,
+      |}
+    | {|
+        +buildEvent: BuildEvent,
+        +error?: void,
+      |},
+  > */ = new ValueEmitter<
     | {|
         +error: Error,
         +buildEvent?: void,
@@ -67,8 +78,8 @@ export default class Parcel {
         +error?: void,
       |},
   >();
-  #watcherSubscription; // AsyncSubscription
-  #watcherCount = 0; // number
+  #watcherSubscription: ?AsyncSubscription;
+  #watcherCount: number = 0;
 
   constructor(options: InitialParcelOptions) {
     this.#initialOptions = options;
@@ -84,6 +95,7 @@ export default class Parcel {
     );
     this.#resolvedOptions = resolvedOptions;
     await createCacheDir(resolvedOptions.outputFS, resolvedOptions.cacheDir);
+    // $FlowFixMe no idea
     let {config} = await loadParcelConfig(resolvedOptions);
     this.#config = config;
     this.#farm =
@@ -94,9 +106,11 @@ export default class Parcel {
 
     // ? Should we have a dispose function on the Parcel class or should we create these references
     //  - in run and watch and dispose at the end of run and in the unsubsribe function of watch
+    // $FlowFixMe no idea
     let {ref: optionsRef} = await this.#farm.createSharedReference(
       resolvedOptions,
     );
+    // $FlowFixMe no idea
     let {ref: configRef} = await this.#farm.createSharedReference(
       config.getConfig(),
     );
@@ -142,7 +156,6 @@ export default class Parcel {
       report,
     });
 
-    this.#runPackage = this.#farm.createHandle('runPackage');
     this.#initialized = true;
   }
 
@@ -321,7 +334,7 @@ export default class Parcel {
     filePath: FilePath,
     env: EnvironmentOpts,
     code?: string,
-  |}) {
+  |}): $FlowFixMe {
     let [result] = await Promise.all([
       this.#assetGraphBuilder.runTransform({
         filePath,
@@ -383,7 +396,7 @@ export default class Parcel {
   }
 
   // This is mainly for integration tests and it not public api!
-  _getResolvedParcelOptions() {
+  _getResolvedParcelOptions(): ParcelOptions {
     return nullthrows(
       this.#resolvedOptions,
       'Resolved options is null, please let parcel intitialise before accessing this.',
@@ -399,7 +412,9 @@ export class BuildError extends ThrowableDiagnostic {
   }
 }
 
-export function createWorkerFarm(options: $Shape<FarmOptions> = {}) {
+export function createWorkerFarm(
+  options: $Shape<FarmOptions> = {},
+): WorkerFarm {
   return new WorkerFarm({
     ...options,
     workerPath: require.resolve('./worker'),

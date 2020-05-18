@@ -47,7 +47,10 @@ export default class AssetRequestRunner extends RequestRunner<
     this.assetGraph = opts.assetGraph;
   }
 
-  async run(request: AssetRequestDesc, api: RequestRunnerAPI) {
+  async run(
+    request: AssetRequestDesc,
+    api: RequestRunnerAPI,
+  ): Promise<AssetRequestResult> {
     api.invalidateOnFileUpdate(
       await this.options.inputFS.realpath(request.filePath),
     );

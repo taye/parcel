@@ -33,6 +33,7 @@ export default class ParcelConfigRequestRunner extends RequestRunner<
   async run(request: null, api: RequestRunnerAPI): Promise<ConfigAndRef> {
     let {config, extendedFiles} = await loadParcelConfig(this.options);
     let processedConfig = config.getConfig();
+    // $FlowFixMe no idea
     let {ref, dispose} = await this.workerFarm.createSharedReference(
       processedConfig,
     );

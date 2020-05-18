@@ -8,7 +8,7 @@ export function relativeBundlePath(
   from: NamedBundle,
   to: NamedBundle,
   opts: {|leadingDotSlash: boolean|} = {leadingDotSlash: true},
-) {
+): string {
   let p = path
     .relative(path.dirname(from.filePath), to.filePath)
     .replace(/\\/g, '/');

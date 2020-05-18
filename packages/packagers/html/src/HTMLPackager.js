@@ -21,7 +21,7 @@ const metadataContent = new Set([
   'title',
 ]);
 
-export default new Packager({
+export default (new Packager({
   async package({bundle, bundleGraph, getInlineBundleContents}) {
     let assets = [];
     bundle.traverseAssets(asset => {
@@ -86,7 +86,7 @@ export default new Packager({
       relative: false,
     });
   },
-});
+}): Packager);
 
 async function getAssetContent(
   bundleGraph: BundleGraph<NamedBundle>,

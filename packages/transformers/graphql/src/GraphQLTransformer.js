@@ -4,7 +4,7 @@ import {Transformer} from '@parcel/plugin';
 const IMPORT_RE = /^# *import +['"](.*)['"] *;? *$/;
 const NEWLINE = /\r\n|[\n\r\u2028\u2029]/;
 
-export default new Transformer({
+export default (new Transformer({
   async transform({asset, options, resolve}) {
     // Peer dependency of graphql-tag
     await options.packageManager.resolve('graphql', asset.filePath);
@@ -55,4 +55,4 @@ export default new Transformer({
 
     return [asset];
   },
-});
+}): Transformer);

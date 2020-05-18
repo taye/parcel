@@ -2,11 +2,13 @@
 
 import type {DevServerOptions, Request, Response} from './types.js.flow';
 import type {
+  Async,
   BundleGraph,
   FilePath,
-  PluginOptions,
   NamedBundle,
+  PluginOptions,
 } from '@parcel/types';
+import type {HTTPServer} from '@parcel/utils';
 import type {Diagnostic} from '@parcel/diagnostic';
 import type {FileSystem} from '@parcel/fs';
 
@@ -108,7 +110,7 @@ export default class Server extends EventEmitter {
     );
   }
 
-  respond(req: Request, res: Response) {
+  respond(req: Request, res: Response): Async<mixed> {
     let {pathname} = url.parse(req.originalUrl || req.url);
 
     if (pathname == null) {
@@ -177,7 +179,11 @@ export default class Server extends EventEmitter {
     }
   }
 
-  serveDist(req: Request, res: Response, next: NextFunction) {
+  serveDist(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> | Promise<mixed> {
     return this.serve(
       this.options.outputFS,
       this.options.distDir,
@@ -193,7 +199,7 @@ export default class Server extends EventEmitter {
     req: Request,
     res: Response,
     next: NextFunction,
-  ) {
+  ): Promise<mixed> {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       // method not allowed
       res.statusCode = 405;
@@ -268,7 +274,7 @@ export default class Server extends EventEmitter {
     res.end(TEMPLATE_404);
   }
 
-  send500(req: Request, res: Response) {
+  send500(req: Request, res: Response): mixed {
     setHeaders(res);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -292,7 +298,7 @@ export default class Server extends EventEmitter {
   /**
    * Load proxy table from package.json and apply them.
    */
-  async applyProxyTable(app: any) {
+  async applyProxyTable(app: any): Promise<Server> {
     // avoid skipping project root
     const fileInRoot: string = path.join(this.options.projectRoot, '_');
 
@@ -334,7 +340,7 @@ export default class Server extends EventEmitter {
     return this;
   }
 
-  async start() {
+  async start(): Promise<HTTPServer> {
     const finalHandler = (req: Request, res: Response) => {
       this.logAccessIfVerbose(req);
 

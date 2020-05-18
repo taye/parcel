@@ -2,7 +2,7 @@
 
 import type {ModuleRequest, PackageInstaller, InstallerOptions} from './types';
 import type {FileSystem} from '@parcel/fs';
-import type {FilePath} from '@parcel/types';
+import type {FilePath, SemverRange} from '@parcel/types';
 
 import path from 'path';
 import {ncp} from '@parcel/fs';
@@ -18,7 +18,7 @@ type Package = {|
 // This PackageInstaller implementation simply copies files from one filesystem to another.
 // Mostly useful for testing purposes.
 export class MockPackageInstaller implements PackageInstaller {
-  packages = new Map<string, Package>();
+  packages: Map<string, Package> = new Map<string, Package>();
 
   register(packageName: string, fs: FileSystem, packagePath: FilePath) {
     this.packages.set(packageName, {fs, packagePath});
@@ -55,7 +55,7 @@ export class MockPackageInstaller implements PackageInstaller {
     moduleRequest: ModuleRequest,
     fs: FileSystem,
     packagePath: FilePath,
-  ) {
+  ): Promise<SemverRange> {
     let pkg = this.packages.get(moduleRequest.name);
     if (!pkg) {
       throw new Error('Unknown package ' + moduleRequest.name);

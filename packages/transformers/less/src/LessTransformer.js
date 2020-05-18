@@ -6,7 +6,7 @@ import SourceMap from '@parcel/source-map';
 // E.g: ~library/file.less
 const WEBPACK_ALIAS_RE = /^~[^/]/;
 
-export default new Transformer({
+export default (new Transformer({
   async getConfig({asset, resolve, options}) {
     let config = await asset.getConfig(['.lessrc', '.lessrc.js'], {
       packageKey: 'less',
@@ -67,7 +67,7 @@ export default new Transformer({
 
     return [asset];
   },
-});
+}): Transformer);
 
 function urlPlugin({asset}) {
   return {

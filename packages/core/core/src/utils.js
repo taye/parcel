@@ -24,7 +24,7 @@ export function assertSignalNotAborted(signal: ?AbortSignal): void {
 }
 
 export class BuildAbortError extends Error {
-  name = 'BuildAbortError';
+  name: string = 'BuildAbortError';
 }
 
 let coreRegistered;

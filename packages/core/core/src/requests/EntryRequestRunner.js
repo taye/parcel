@@ -34,7 +34,7 @@ export default class EntryRequestRunner extends RequestRunner<
     this.assetGraph = opts.assetGraph;
   }
 
-  run(request: FilePath) {
+  run(request: FilePath): Promise<EntryResult> {
     return this.entryResolver.resolveEntry(request);
   }
 

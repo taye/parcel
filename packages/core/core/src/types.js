@@ -267,6 +267,19 @@ export type BundleGraphNode =
   | BundleGroupNode
   | BundleNode;
 
+export type InternalSymbolResolution = {|
+  +asset: Asset,
+  +exportSymbol: Symbol | string,
+  +symbol: void | null | Symbol,
+  // the location of the specifier that lead to this result
+  +loc: ?SourceLocation,
+|};
+
+export type InternalExportSymbolResolution = {|
+  ...InternalSymbolResolution,
+  +exportAs: Symbol | string,
+|};
+
 export type ConfigRequestNode = {|
   id: string,
   +type: 'config_request',

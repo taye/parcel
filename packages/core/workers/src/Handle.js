@@ -37,14 +37,17 @@ export default class Handle {
     handleById.delete(this.id);
   }
 
-  serialize() {
+  serialize(): {|childId: ?number, id: number|} {
     return {
       id: this.id,
       childId: this.childId,
     };
   }
 
-  static deserialize(opts: {|id: number, childId?: number|}) {
+  static deserialize(opts: {|
+    id: number,
+    childId?: number,
+  |}): (...args: Array<mixed>) => Promise<mixed> {
     return function(...args: Array<mixed>) {
       let workerApi;
       if (child) {

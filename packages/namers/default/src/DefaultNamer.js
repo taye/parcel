@@ -10,7 +10,7 @@ import nullthrows from 'nullthrows';
 
 const COMMON_NAMES = new Set(['index', 'src', 'lib']);
 
-export default new Namer({
+export default (new Namer({
   name({bundle, bundleGraph, options}) {
     // If the bundle has an explicit file path given (e.g. by a target), use that.
     if (bundle.filePath != null) {
@@ -95,7 +95,7 @@ export default new Namer({
 
     return name + '.' + bundle.type;
   },
-});
+}): Namer);
 
 function nameFromContent(bundle: Bundle, rootDir: FilePath): string {
   let entryFilePath = nullthrows(bundle.getMainEntry()).filePath;

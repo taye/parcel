@@ -32,7 +32,10 @@ export default class ResolverRunner {
     this.pluginOptions = new PluginOptions(this.options);
   }
 
-  async getThrowableDiagnostic(dependency: Dependency, message: string) {
+  async getThrowableDiagnostic(
+    dependency: Dependency,
+    message: string,
+  ): Promise<ThrowableDiagnostic> {
     let diagnostic: Diagnostic = {
       message,
       origin: '@parcel/core',

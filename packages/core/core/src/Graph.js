@@ -43,7 +43,7 @@ export default class Graph<TNode: Node, TEdgeType: string | null = null> {
     }
   }
 
-  static deserialize(opts: GraphOpts<TNode, TEdgeType>) {
+  static deserialize(opts: GraphOpts<TNode, TEdgeType>): this {
     return new this(opts);
   }
 
@@ -369,7 +369,7 @@ export default class Graph<TNode: Node, TEdgeType: string | null = null> {
     startNode: TNode,
     visit: GraphVisitor<TNode, TContext>,
     type: TEdgeType | null = null,
-  ) {
+  ): ?TContext {
     return this.dfs({
       visit,
       startNode,

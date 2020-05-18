@@ -39,7 +39,7 @@ export default class DepPathRequestRunner extends RequestRunner<
     this.assetGraph = assetGraph;
   }
 
-  run(request: Dependency) {
+  run(request: Dependency): Promise<?AssetRequestDesc> {
     return this.resolverRunner.resolve(request);
   }
 

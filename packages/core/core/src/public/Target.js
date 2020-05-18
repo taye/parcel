@@ -4,6 +4,7 @@ import type {
   Target as ITarget,
   TargetSourceMapOptions,
   Environment as IEnvironment,
+  SourceLocation,
 } from '@parcel/types';
 import type {Target as TargetValue} from '../types';
 import Environment from './Environment';
@@ -16,9 +17,9 @@ export function targetToInternalTarget(target: ITarget): TargetValue {
 }
 
 export default class Target implements ITarget {
-  #target; // TargetValue
+  #target: TargetValue;
 
-  constructor(target: TargetValue) {
+  constructor(target: TargetValue): void | Target {
     let existing = internalTargetToTarget.get(target);
     if (existing != null) {
       return existing;
@@ -53,7 +54,7 @@ export default class Target implements ITarget {
     return this.#target.publicUrl;
   }
 
-  get loc() {
+  get loc(): ?SourceLocation {
     return this.#target.loc;
   }
 }

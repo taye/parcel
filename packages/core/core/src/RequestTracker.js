@@ -71,7 +71,7 @@ export class RequestGraph extends Graph<
   unpredicatableNodeIds: Set<NodeId> = new Set();
 
   // $FlowFixMe
-  static deserialize(opts: SerializedRequestGraph) {
+  static deserialize(opts: SerializedRequestGraph): RequestGraph {
     // $FlowFixMe Added in Flow 0.121.0 upgrade in #4381
     let deserialized = new RequestGraph(opts);
     deserialized.invalidNodeIds = opts.invalidNodeIds;
@@ -93,7 +93,7 @@ export class RequestGraph extends Graph<
     };
   }
 
-  addNode(node: RequestGraphNode) {
+  addNode(node: RequestGraphNode): RequestGraphNode {
     if (!this.hasNode(node.id)) {
       if (node.type === 'glob') {
         this.globNodeIds.add(node.id);
@@ -103,7 +103,7 @@ export class RequestGraph extends Graph<
     return super.addNode(node);
   }
 
-  removeNode(node: RequestGraphNode) {
+  removeNode(node: RequestGraphNode): void {
     this.invalidNodeIds.delete(node.id);
     this.incompleteNodeIds.delete(node.id);
     if (node.type === 'glob') {
@@ -113,7 +113,7 @@ export class RequestGraph extends Graph<
   }
 
   // TODO: deprecate
-  addRequest(request: Request) {
+  addRequest(request: Request): ?RequestGraphNode {
     let requestNode = nodeFromRequest(request);
     if (!this.hasNode(requestNode.id)) {
       this.addNode(requestNode);
@@ -123,7 +123,7 @@ export class RequestGraph extends Graph<
     return requestNode;
   }
 
-  getRequestNode(id: string) {
+  getRequestNode(id: string): RequestNode {
     let node = nullthrows(this.getNode(id));
     invariant(node.type === 'request');
     return node;
@@ -274,11 +274,16 @@ export default class RequestTracker {
     this.graph = graph || new RequestGraph();
   }
 
-  isTracked(id: string) {
+  isTracked(id: string): boolean {
     return this.graph.hasNode(id);
   }
 
-  getRequest(id: string) {
+  getRequest(
+    id: string,
+  ):
+    | {|id: string, +type: 'file', value: File|}
+    | {|id: string, +type: 'glob', value: Glob|}
+    | {|id: string, +type: 'request', value: Request|} {
     return nullthrows(this.graph.getNode(id));
   }
 
@@ -304,7 +309,7 @@ export default class RequestTracker {
     }
   }
 
-  hasValidResult(id: string) {
+  hasValidResult(id: string): boolean {
     return (
       this.graph.nodes.has(id) &&
       !this.graph.invalidNodeIds.has(id) &&
@@ -312,7 +317,7 @@ export default class RequestTracker {
     );
   }
 
-  getRequestResult(id: string) {
+  getRequestResult(id: string): mixed {
     let node = nullthrows(this.graph.getNode(id));
     invariant(node.type === 'request');
     return node.value.result;
@@ -334,7 +339,7 @@ export default class RequestTracker {
     return this.graph.respondToFSEvents(events);
   }
 
-  hasInvalidRequests() {
+  hasInvalidRequests(): boolean {
     return this.graph.invalidNodeIds.size > 0;
   }
 
@@ -376,7 +381,7 @@ export type RequestRunnerAPI = {|
   getId: () => string,
 |};
 
-export function generateRequestId(type: string, request: mixed) {
+export function generateRequestId(type: string, request: mixed): string {
   return md5FromObject({type, request});
 }
 
@@ -430,7 +435,7 @@ export class RequestRunner<TRequest, TResult> {
     // Do nothing, this is defined for flow if extended classes implement this function
   }
 
-  generateRequestId(request: TRequest) {
+  generateRequestId(request: TRequest): string {
     return md5FromObject({type: this.type, request});
   }
 

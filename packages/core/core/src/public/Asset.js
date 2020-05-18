@@ -61,7 +61,10 @@ export function mutableAssetToUncommittedAsset(
   return nullthrows(_mutableAssetToUncommittedAsset.get(mutableAsset));
 }
 
-export function assetFromValue(value: AssetValue, options: ParcelOptions) {
+export function assetFromValue(
+  value: AssetValue,
+  options: ParcelOptions,
+): Asset {
   return new Asset(
     value.committed
       ? new CommittedAsset(value, options)
@@ -73,7 +76,7 @@ export function assetFromValue(value: AssetValue, options: ParcelOptions) {
 }
 
 class BaseAsset {
-  #asset; // CommittedAsset | UncommittedAsset
+  #asset: CommittedAsset | UncommittedAsset;
 
   constructor(asset: CommittedAsset | UncommittedAsset) {
     this.#asset = asset;
@@ -81,7 +84,7 @@ class BaseAsset {
   }
 
   // $FlowFixMe
-  [inspect]() {
+  [inspect](): $FlowFixMe {
     return `Asset(${this.filePath})`;
   }
 
@@ -189,9 +192,9 @@ class BaseAsset {
 }
 
 export class Asset extends BaseAsset implements IAsset {
-  #asset; // InternalAsset
+  #asset: CommittedAsset | UncommittedAsset;
 
-  constructor(asset: CommittedAsset | UncommittedAsset) {
+  constructor(asset: CommittedAsset | UncommittedAsset): void | Asset {
     let existing = assetValueToAsset.get(asset.value);
     if (existing != null) {
       return existing;
@@ -208,9 +211,9 @@ export class Asset extends BaseAsset implements IAsset {
 }
 
 export class MutableAsset extends BaseAsset implements IMutableAsset {
-  #asset; // InternalAsset
+  #asset: UncommittedAsset;
 
-  constructor(asset: UncommittedAsset) {
+  constructor(asset: UncommittedAsset): void | MutableAsset {
     let existing = assetValueToMutableAsset.get(asset.value);
     if (existing != null) {
       return existing;

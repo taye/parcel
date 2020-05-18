@@ -9,7 +9,7 @@ import nullthrows from 'nullthrows';
 import semver from 'semver';
 import loadPlugins from './loadPlugins';
 
-export default new Transformer({
+export default (new Transformer({
   async getConfig({asset, options}) {
     let config = await asset.getConfig(
       ['.posthtmlrc', '.posthtmlrc.js', 'posthtml.config.js'],
@@ -80,4 +80,4 @@ export default new Transformer({
       content: render(ast.program),
     };
   },
-});
+}): Transformer);

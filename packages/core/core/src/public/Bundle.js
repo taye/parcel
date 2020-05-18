@@ -49,15 +49,15 @@ export function bundleToInternalBundleGraph(bundle: IBundle): BundleGraph {
 }
 
 export class Bundle implements IBundle {
-  #bundle; // InternalBundle
-  #bundleGraph; // BundleGraph
-  #options; // ParcelOptions
+  #bundle: InternalBundle;
+  #bundleGraph: BundleGraph;
+  #options: ParcelOptions;
 
   constructor(
     bundle: InternalBundle,
     bundleGraph: BundleGraph,
     options: ParcelOptions,
-  ) {
+  ): void | Bundle {
     let existingMap = internalBundleToBundle.get(options).get(bundleGraph);
     let existing = existingMap.get(bundle);
     if (existing != null) {
@@ -155,7 +155,7 @@ export class Bundle implements IBundle {
     );
   }
 
-  traverseAssets<TContext>(visit: GraphVisitor<IAsset, TContext>) {
+  traverseAssets<TContext>(visit: GraphVisitor<IAsset, TContext>): ?TContext {
     return this.#bundleGraph.traverseAssets(
       this.#bundle,
       mapVisitor(asset => assetFromValue(asset, this.#options), visit),
@@ -164,14 +164,14 @@ export class Bundle implements IBundle {
 }
 
 export class NamedBundle extends Bundle implements INamedBundle {
-  #bundle; // InternalBundle
-  #bundleGraph; // BundleGraph
+  #bundle: InternalBundle;
+  #bundleGraph: BundleGraph;
 
   constructor(
     bundle: InternalBundle,
     bundleGraph: BundleGraph,
     options: ParcelOptions,
-  ) {
+  ): void | NamedBundle {
     let existingMap = internalBundleToNamedBundle.get(options).get(bundleGraph);
     let existing = existingMap.get(bundle);
     if (existing != null) {

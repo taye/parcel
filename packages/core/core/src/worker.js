@@ -1,7 +1,13 @@
 // @flow strict-local
 import invariant from 'assert';
-import type {Bundle, ParcelOptions, ProcessedParcelConfig} from './types';
+import type {
+  Asset,
+  Bundle,
+  ParcelOptions,
+  ProcessedParcelConfig,
+} from './types';
 import BundleGraph from './BundleGraph';
+import type {ConfigRequestAndResult} from './Transformation';
 import type {WorkerApi} from '@parcel/workers';
 
 import Transformation, {type TransformationOpts} from './Transformation';
@@ -33,7 +39,10 @@ type WorkerValidationOpts = {|
 export function runTransform(
   workerApi: WorkerApi,
   opts: WorkerTransformationOpts,
-) {
+): Promise<{|
+  assets: Array<Asset>,
+  configRequests: Array<ConfigRequestAndResult>,
+|}> {
   let {optionsRef, configRef, ...rest} = opts;
   let options = ((workerApi.getSharedReference(
     optionsRef,
@@ -58,7 +67,10 @@ export function runTransform(
   }).run();
 }
 
-export function runValidate(workerApi: WorkerApi, opts: WorkerValidationOpts) {
+export function runValidate(
+  workerApi: WorkerApi,
+  opts: WorkerValidationOpts,
+): Promise<void> {
   let {optionsRef, configRef, ...rest} = opts;
   let options = ((workerApi.getSharedReference(
     optionsRef,
@@ -102,7 +114,7 @@ export function runPackage(
     |},
     optionsRef: number,
   |},
-) {
+): Promise<{|hash: string, hashReferences: Array<$FlowFixMe>, size: number|}> {
   let bundleGraph = workerApi.getSharedReference(bundleGraphReference);
   invariant(bundleGraph instanceof BundleGraph);
   let options = ((workerApi.getSharedReference(

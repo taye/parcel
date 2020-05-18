@@ -32,7 +32,7 @@ export default class TargetRequestRunner extends RequestRunner<
     this.assetGraph = opts.assetGraph;
   }
 
-  run(request: Entry) {
+  run(request: Entry): Promise<TargetResolveResult> {
     return this.targetResolver.resolve(request.packagePath);
   }
 

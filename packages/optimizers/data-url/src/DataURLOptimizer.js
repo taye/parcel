@@ -5,7 +5,7 @@ import {blobToBuffer} from '@parcel/utils';
 import mime from 'mime';
 import {isBinaryFile} from 'isbinaryfile';
 
-export default new Optimizer({
+export default (new Optimizer({
   async optimize({bundle, contents}) {
     let bufferContents = await blobToBuffer(contents);
     let hasBinaryContent = await isBinaryFile(bufferContents);
@@ -23,4 +23,4 @@ export default new Optimizer({
       contents: `data:${mimeType}${encoding},${content}`,
     };
   },
-});
+}): Optimizer);

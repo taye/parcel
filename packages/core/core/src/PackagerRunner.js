@@ -99,6 +99,7 @@ export default class PackagerRunner {
 
   async writeBundles(bundleGraph: InternalBundleGraph) {
     let farm = nullthrows(this.farm);
+    // $FlowFixMe no idea
     let {ref, dispose} = await farm.createSharedReference(bundleGraph);
 
     let bundleInfoMap = {};
@@ -166,7 +167,7 @@ export default class PackagerRunner {
     return {time: Date.now() - start, hash, hashReferences, cacheKeys};
   }
 
-  getBundleInfoFromCache(infoKey: string) {
+  getBundleInfoFromCache(infoKey: string): void | Promise<BundleInfo> {
     if (this.options.disableCache) {
       return;
     }
@@ -178,7 +179,11 @@ export default class PackagerRunner {
     bundle: InternalBundle,
     bundleGraph: InternalBundleGraph,
     cacheKeys: CacheKeyMap,
-  ) {
+  ): Promise<{|
+    hash: string,
+    hashReferences: Array<$FlowFixMe>,
+    size: number,
+  |}> {
     let {contents, map} = await this.getBundleResult(bundle, bundleGraph);
 
     return this.writeToCache(cacheKeys, contents, map);
@@ -484,7 +489,15 @@ export default class PackagerRunner {
     }
   }
 
-  async writeToCache(cacheKeys: CacheKeyMap, contents: Blob, map: ?Blob) {
+  async writeToCache(
+    cacheKeys: CacheKeyMap,
+    contents: Blob,
+    map: ?Blob,
+  ): Promise<{|
+    hash: string,
+    hashReferences: Array<$FlowFixMe>,
+    size: number,
+  |}> {
     let size = 0;
     let hash = crypto.createHash('md5');
     let boundaryStr = '';

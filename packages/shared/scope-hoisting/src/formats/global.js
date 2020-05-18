@@ -5,6 +5,7 @@ import type {
   Bundle,
   BundleGraph,
   NamedBundle,
+  PluginOptions,
   Symbol,
 } from '@parcel/types';
 import type {NodePath} from '@babel/traverse';
@@ -72,7 +73,11 @@ export function generateBundleImports(
   }
 }
 
-export function generateExternalImport(_: Bundle, {loc}: ExternalModule) {
+export function generateExternalImport(
+  _: Bundle,
+  {loc}: ExternalModule,
+  __: NodePath<Program>,
+) {
   throw getThrowableDiagnosticForNode(
     'External modules are not supported when building for browser',
     loc?.filePath,
@@ -85,7 +90,9 @@ export function generateExports(
   bundle: NamedBundle,
   referencedAssets: Set<Asset>,
   path: NodePath<Program>,
-) {
+  replacements: Map<Symbol, Symbol>,
+  _: PluginOptions,
+): Set<Symbol> {
   let exported = new Set<Symbol>();
   let statements: Array<ExpressionStatement> = [];
 

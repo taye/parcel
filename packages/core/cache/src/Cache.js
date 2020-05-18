@@ -1,4 +1,4 @@
-// @flow strict-local
+// @flow
 
 import type {Readable} from 'stream';
 
@@ -8,7 +8,6 @@ import type {FileSystem} from '@parcel/fs';
 import path from 'path';
 import logger from '@parcel/logger';
 import {serialize, deserialize, registerSerializableClass} from '@parcel/core';
-// flowlint-next-line untyped-import:off
 import packageJson from '../package.json';
 
 export default class Cache {
@@ -45,16 +44,16 @@ export default class Cache {
     return this.fs.exists(this._getCachePath(key, '.blob'));
   }
 
-  getBlob(key: string, encoding?: buffer$Encoding) {
+  getBlob(key: string, encoding?: buffer$Encoding): any {
     return this.fs.readFile(this._getCachePath(key, '.blob'), encoding);
   }
 
-  async setBlob(key: string, contents: Buffer | string) {
+  async setBlob(key: string, contents: Buffer | string): Promise<string> {
     await this.fs.writeFile(this._getCachePath(key, '.blob'), contents);
     return key;
   }
 
-  async get(key: string) {
+  async get(key: string): Promise<any> {
     try {
       let data = await this.fs.readFile(this._getCachePath(key));
       return deserialize(data);
@@ -67,7 +66,7 @@ export default class Cache {
     }
   }
 
-  async set(key: string, value: mixed) {
+  async set(key: string, value: mixed): Promise<void | string> {
     try {
       let blobPath = this._getCachePath(key);
       let data = serialize(value);

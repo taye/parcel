@@ -1,6 +1,7 @@
 // @flow strict-local
 
 import type {AbortSignal} from 'abortcontroller-polyfill/dist/cjs-ponyfill';
+import type {FilePath} from '@parcel/types';
 import type WorkerFarm, {Handle} from '@parcel/workers';
 import type {Event} from '@parcel/watcher';
 import type {
@@ -215,7 +216,6 @@ export default class AssetGraphBuilder extends EventEmitter {
         request != null &&
         !this.requestTracker.hasValidResult(nullthrows(request).id)
       ) {
-        // $FlowFixMe
         this.queueRequest(request, {
           signal,
         }).then(() => visitChildren(node));
@@ -298,7 +298,10 @@ export default class AssetGraphBuilder extends EventEmitter {
     await Promise.all(promises);
   }
 
-  queueRequest(request: AssetGraphBuildRequest, runOpts: RunRequestOpts) {
+  queueRequest(
+    request: AssetGraphBuildRequest,
+    runOpts: RunRequestOpts,
+  ): Promise<mixed> {
     return this.queue.add(async () => {
       if (this.rejected.size > 0) {
         return;
@@ -312,7 +315,10 @@ export default class AssetGraphBuilder extends EventEmitter {
     });
   }
 
-  async runRequest(request: AssetGraphBuildRequest, runOpts: RunRequestOpts) {
+  async runRequest(
+    request: AssetGraphBuildRequest,
+    runOpts: RunRequestOpts,
+  ): Promise<mixed> {
     switch (request.type) {
       case 'entry_request':
         return this.entryRequestRunner.runRequest(request.request, runOpts);
@@ -339,13 +345,14 @@ export default class AssetGraphBuilder extends EventEmitter {
     }
   }
 
-  getCorrespondingRequest(node: AssetGraphNode) {
+  getCorrespondingRequest(node: AssetGraphNode): ?AssetGraphBuildRequest {
     let requestNode =
       node.correspondingRequest != null
         ? this.requestGraph.getNode(node.correspondingRequest)
         : null;
     if (requestNode != null) {
       invariant(requestNode.type === 'request');
+      // $FlowFixMe TODO???
       return requestNode.value;
     }
     switch (node.type) {
@@ -391,11 +398,14 @@ export default class AssetGraphBuilder extends EventEmitter {
     }
   }
 
-  respondToFSEvents(events: Array<Event>) {
+  respondToFSEvents(events: Array<Event>): boolean {
     return this.requestGraph.respondToFSEvents(events);
   }
 
-  getWatcherOptions() {
+  getWatcherOptions(): {|
+    backend?: 'fs-events' | 'watchman' | 'inotify' | 'windows' | 'brute-force',
+    ignore?: Array<FilePath>,
+  |} {
     let vcsDirs = ['.git', '.hg'].map(dir =>
       path.join(this.options.projectRoot, dir),
     );
@@ -403,7 +413,11 @@ export default class AssetGraphBuilder extends EventEmitter {
     return {ignore};
   }
 
-  getCacheKeys() {
+  getCacheKeys(): {|
+    assetGraphKey: string,
+    requestGraphKey: string,
+    snapshotKey: string,
+  |} {
     let assetGraphKey = md5FromString(`${this.cacheKey}:assetGraph`);
     let requestGraphKey = md5FromString(`${this.cacheKey}:requestGraph`);
     let snapshotKey = md5FromString(`${this.cacheKey}:snapshot`);

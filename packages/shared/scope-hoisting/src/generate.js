@@ -55,7 +55,7 @@ export function generate({
   ast: File,
   options: PluginOptions,
   referencedAssets: Set<Asset>,
-|}) {
+|}): {|contents: string, map: null | SourceMap|} {
   let interpreter;
   if (!bundle.target.env.isBrowser()) {
     let _interpreter = nullthrows(bundle.getMainEntry()).meta.interpreter;

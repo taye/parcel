@@ -29,8 +29,8 @@ import {HASH_REF_PREFIX} from '../constants';
 
 export default class MutableBundleGraph extends BundleGraph<IBundle>
   implements IMutableBundleGraph {
-  #graph; // InternalBundleGraph
-  #options; // ParcelOptions
+  #graph: InternalBundleGraph;
+  #options: ParcelOptions;
 
   constructor(graph: InternalBundleGraph, options: ParcelOptions) {
     super(

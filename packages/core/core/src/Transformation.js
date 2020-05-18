@@ -55,7 +55,7 @@ export type TransformationOpts = {|
 |};
 
 type ConfigMap = Map<PackageName, Config>;
-type ConfigRequestAndResult = {|
+export type ConfigRequestAndResult = {|
   request: ConfigRequestDesc,
   result: Config,
 |};
@@ -90,7 +90,7 @@ export default class Transformation {
     this.impactfulOptions = {hot};
   }
 
-  async loadConfig(configRequest: ConfigRequestDesc) {
+  async loadConfig(configRequest: ConfigRequestDesc): Promise<Config> {
     let result = await this.configLoader.load(configRequest);
     this.configRequests.push({request: configRequest, result});
     return result;
@@ -336,6 +336,7 @@ export default class Transformation {
     }
 
     let cachedAssets = await this.options.cache.get(cacheKey);
+    // $FlowFixMe
     if (!cachedAssets) {
       return null;
     }

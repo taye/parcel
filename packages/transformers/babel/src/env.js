@@ -1,7 +1,7 @@
 // @flow
 
 import type {Config} from '@parcel/types';
-import type {BabelTargets} from './types';
+import type {BabelConfig, BabelTargets} from './types';
 
 import presetEnv from '@babel/preset-env';
 
@@ -13,7 +13,9 @@ import {enginesToBabelTargets} from './utils';
  * This is done by finding the source module's target engines, and the app's
  * target engines, and doing a diff to include only the necessary plugins.
  */
-export default async function getEnvOptions(config: Config) {
+export default async function getEnvOptions(
+  config: Config,
+): Promise<?{|...BabelConfig, targets: BabelTargets|}> {
   // Load the target engines for the app and generate a @babel/preset-env config
   let appBabelTargets = enginesToBabelTargets(config.env);
 

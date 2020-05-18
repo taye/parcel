@@ -11,11 +11,11 @@ function normalizePath(p: string): string {
   return p.replace(/\\/g, '/');
 }
 
-export function isGlob(p: FilePath) {
+export function isGlob(p: FilePath): boolean {
   return _isGlob(normalizePath(p));
 }
 
-export function isGlobMatch(filePath: FilePath, glob: Glob) {
+export function isGlobMatch(filePath: FilePath, glob: Glob): boolean {
   return isMatch(filePath, normalizePath(glob));
 }
 

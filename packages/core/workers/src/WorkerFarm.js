@@ -1,6 +1,6 @@
 // @flow
 
-import type {ErrorWithCode, FilePath} from '@parcel/types';
+import type {Async, ErrorWithCode, FilePath} from '@parcel/types';
 import type {
   CallRequest,
   HandleCallRequest,
@@ -99,7 +99,13 @@ export default class WorkerFarm extends EventEmitter {
     this.startMaxWorkers();
   }
 
-  workerApi = {
+  workerApi: {|
+    callChild?: (childId: number, request: HandleCallRequest) => Promise<mixed>,
+    +callMaster: (CallRequest, ?boolean) => Promise<mixed>,
+    +createReverseHandle: (fn: HandleFunction) => Handle,
+    +getSharedReference: (ref: number) => mixed,
+    +resolveSharedReference: (value: mixed) => ?number,
+  |} = {
     callMaster: async (
       request: CallRequest,
       awaitResponse: ?boolean = true,
@@ -175,7 +181,7 @@ export default class WorkerFarm extends EventEmitter {
     };
   }
 
-  onError(error: ErrorWithCode, worker: Worker) {
+  onError(error: ErrorWithCode, worker: Worker): Async<void> {
     // Handle ipc errors
     if (error.code === 'ERR_IPC_CHANNEL_CLOSED') {
       return this.stopWorker(worker);
@@ -364,13 +370,15 @@ export default class WorkerFarm extends EventEmitter {
     );
   }
 
-  createReverseHandle(fn: HandleFunction) {
+  createReverseHandle(fn: HandleFunction): Handle {
     let handle = new Handle({fn, workerApi: this.workerApi});
     this.handles.set(handle.id, handle);
     return handle;
   }
 
-  async createSharedReference(value: mixed) {
+  async createSharedReference(
+    value: mixed,
+  ): Promise<{|ref: mixed, dispose(): Promise<mixed>|}> {
     let ref = referenceId++;
     this.sharedReferences.set(ref, value);
     this.sharedReferencesByValue.set(value, ref);
@@ -472,17 +480,23 @@ export default class WorkerFarm extends EventEmitter {
     });
   }
 
-  static getNumWorkers() {
+  static getNumWorkers(): number {
     return process.env.PARCEL_WORKERS
       ? parseInt(process.env.PARCEL_WORKERS, 10)
       : cpuCount();
   }
 
-  static isWorker() {
+  static isWorker(): boolean {
     return !!child;
   }
 
-  static getWorkerApi() {
+  static getWorkerApi(): {|
+    callChild?: (childId: number, request: HandleCallRequest) => Promise<mixed>,
+    +callMaster: (CallRequest, ?boolean) => Promise<mixed>,
+    +createReverseHandle: (fn: HandleFunction) => Handle,
+    +getSharedReference: (ref: number) => mixed,
+    +resolveSharedReference: (value: mixed) => ?number,
+  |} {
     invariant(
       child != null,
       'WorkerFarm.getWorkerApi can only be called within workers',
@@ -490,7 +504,7 @@ export default class WorkerFarm extends EventEmitter {
     return child.workerApi;
   }
 
-  static getConcurrentCallsPerWorker() {
+  static getConcurrentCallsPerWorker(): number {
     return parseInt(process.env.PARCEL_MAX_CONCURRENT_CALLS, 10) || 5;
   }
 }

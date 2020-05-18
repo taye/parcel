@@ -21,9 +21,9 @@ export class Symbols implements ISymbols {
   /*::
   @@iterator(): Iterator<[Symbol, {|local: Symbol, loc: ?SourceLocation|}]> { return ({}: any); }
   */
-  #value; // Asset
+  #value: Asset;
 
-  constructor(asset: Asset) {
+  constructor(asset: Asset): void | Symbols {
     let existing = valueToSymbols.get(asset);
     if (existing != null) {
       return existing;
@@ -51,13 +51,13 @@ export class Symbols implements ISymbols {
   }
 
   // $FlowFixMe
-  [Symbol.iterator]() {
+  [Symbol.iterator](): any {
     return this.#value.symbols
       ? this.#value.symbols[Symbol.iterator]()
       : EMPTY_ITERATOR;
   }
 
-  get isCleared() {
+  get isCleared(): boolean {
     return this.#value.symbols == null;
   }
 }
@@ -71,7 +71,7 @@ class MutableSymbols {
   /*::
   @@iterator(): Iterator<[Symbol, {|local: Symbol, loc: ?SourceLocation|}]> { return ({}: any); }
   */
-  #value; // Asset
+  #value: Asset | Dependency;
 
   constructor(asset: Asset | Dependency) {
     this.#value = asset;
@@ -102,21 +102,21 @@ class MutableSymbols {
   }
 
   // $FlowFixMe
-  [Symbol.iterator]() {
+  [Symbol.iterator](): any {
     return this.#value.symbols
       ? this.#value.symbols[Symbol.iterator]()
       : EMPTY_ITERATOR;
   }
 
-  get isCleared() {
+  get isCleared(): boolean {
     return this.#value.symbols == null;
   }
 }
 
 export class MutableDependencySymbols extends MutableSymbols
   implements IMutableSymbols {
-  #dependency; // Dependency
-  constructor(dependency: Dependency) {
+  #dependency: Dependency;
+  constructor(dependency: Dependency): void | MutableDependencySymbols {
     let existing = valueToMutableSymbols.get(dependency);
     if (existing != null) {
       return ((existing: any): MutableDependencySymbols);
@@ -133,8 +133,8 @@ export class MutableDependencySymbols extends MutableSymbols
 
 export class MutableAssetSymbols extends MutableSymbols
   implements IMutableSymbols {
-  #asset; // Asset
-  constructor(asset: Asset) {
+  #asset: Asset;
+  constructor(asset: Asset): void | MutableAssetSymbols {
     super(asset);
     let existing = valueToMutableSymbols.get(asset);
     if (existing != null) {
