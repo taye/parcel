@@ -24,7 +24,7 @@ export class TSModuleGraph {
     }
   }
 
-  getModule(name: string): void | TSModule {
+  getModule(name: string): ?TSModule {
     return this.modules.get(name);
   }
 
@@ -76,7 +76,7 @@ export class TSModuleGraph {
   getExport(
     m: TSModule,
     e: Export,
-  ): null | {|imported: string, module: TSModule, name: string|} {
+  ): ?{|imported: string, module: TSModule, name: string|} {
     invariant(e.name != null);
     let exportName = e.name;
 

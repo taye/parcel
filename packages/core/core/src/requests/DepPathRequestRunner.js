@@ -7,7 +7,7 @@ import type {AssetRequestDesc, Dependency, ParcelOptions} from '../types';
 import {RequestRunner} from '../RequestTracker';
 import ResolverRunner from '../ResolverRunner';
 
-type DependencyResult = AssetRequestDesc | null | void;
+type DependencyResult = ?AssetRequestDesc;
 
 export type DepPathRequest = {|
   id: string,

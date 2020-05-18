@@ -63,9 +63,10 @@ export class MemoryFS implements FileSystem {
     instances.set(this.id, this);
   }
 
-  static deserialize(opts: SerializedMemoryFS): void | MemoryFS | WorkerFS {
-    if (instances.has(opts.id)) {
-      return instances.get(opts.id);
+  static deserialize(opts: SerializedMemoryFS): MemoryFS | WorkerFS {
+    let worker = instances.get(opts.id);
+    if (worker) {
+      return worker;
     }
 
     let fs = new WorkerFS(opts.id, nullthrows(opts.handle));
@@ -256,7 +257,7 @@ export class MemoryFS implements FileSystem {
     return this.readdirSync(dir, opts);
   }
 
-  async unlink(filePath: FilePath): any | Promise<void> {
+  async unlink(filePath: FilePath): Promise<void> {
     filePath = this._normalizePath(filePath);
     if (!this.files.has(filePath) && !this.dirs.has(filePath)) {
       throw new FSError('ENOENT', filePath, 'does not exist');
@@ -279,7 +280,7 @@ export class MemoryFS implements FileSystem {
     return Promise.resolve();
   }
 
-  async mkdirp(dir: FilePath): any | Promise<void> {
+  async mkdirp(dir: FilePath): Promise<void> {
     dir = this._normalizePath(dir);
     if (this.dirs.has(dir)) {
       return Promise.resolve();
@@ -312,7 +313,7 @@ export class MemoryFS implements FileSystem {
     return Promise.resolve();
   }
 
-  async rimraf(filePath: FilePath): any | Promise<void> {
+  async rimraf(filePath: FilePath): Promise<void> {
     filePath = this._normalizePath(filePath);
 
     if (this.dirs.has(filePath)) {

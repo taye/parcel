@@ -57,7 +57,7 @@ export class Bundle implements IBundle {
     bundle: InternalBundle,
     bundleGraph: BundleGraph,
     options: ParcelOptions,
-  ): void | Bundle {
+  ): ?Bundle {
     let existingMap = internalBundleToBundle.get(options).get(bundleGraph);
     let existing = existingMap.get(bundle);
     if (existing != null) {
@@ -171,7 +171,7 @@ export class NamedBundle extends Bundle implements INamedBundle {
     bundle: InternalBundle,
     bundleGraph: BundleGraph,
     options: ParcelOptions,
-  ): void | NamedBundle {
+  ): ?NamedBundle {
     let existingMap = internalBundleToNamedBundle.get(options).get(bundleGraph);
     let existing = existingMap.get(bundle);
     if (existing != null) {

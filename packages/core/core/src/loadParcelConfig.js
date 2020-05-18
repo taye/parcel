@@ -54,7 +54,7 @@ export default async function loadParcelConfig(
 
 export async function resolveParcelConfig(
   options: ParcelOptions,
-): Promise<null | {|config: ParcelConfig, extendedFiles: Array<FilePath>|}> {
+): Promise<?{|config: ParcelConfig, extendedFiles: Array<FilePath>|}> {
   let filePath = getResolveFrom(options);
   let configPath = await resolveConfig(options.inputFS, filePath, [
     '.parcelrc',

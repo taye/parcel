@@ -89,7 +89,7 @@ export class EntryResolver {
     throw new Error(`Unknown entry ${entry}`);
   }
 
-  async readPackage(entry: FilePath): Promise<null | InternalPackageJSON> {
+  async readPackage(entry: FilePath): Promise<?InternalPackageJSON> {
     let content, pkg;
     let pkgFile = path.join(entry, 'package.json');
     try {

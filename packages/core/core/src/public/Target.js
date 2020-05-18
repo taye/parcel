@@ -19,7 +19,7 @@ export function targetToInternalTarget(target: ITarget): TargetValue {
 export default class Target implements ITarget {
   #target: TargetValue;
 
-  constructor(target: TargetValue): void | Target {
+  constructor(target: TargetValue): Target {
     let existing = internalTargetToTarget.get(target);
     if (existing != null) {
       return existing;
@@ -28,6 +28,7 @@ export default class Target implements ITarget {
     this.#target = target;
     _targetToInternalTarget.set(this, target);
     internalTargetToTarget.set(target, this);
+    return this;
   }
 
   get distEntry(): ?FilePath {

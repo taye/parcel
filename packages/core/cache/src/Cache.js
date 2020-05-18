@@ -67,7 +67,7 @@ export default class Cache {
     }
   }
 
-  async set(key: string, value: mixed): Promise<void | string> {
+  async set(key: string, value: mixed): Promise<?string> {
     try {
       let blobPath = this._getCachePath(key);
       let data = serialize(value);

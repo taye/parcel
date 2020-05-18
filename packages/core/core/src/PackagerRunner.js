@@ -166,7 +166,7 @@ export default class PackagerRunner {
     return {time: Date.now() - start, hash, hashReferences, cacheKeys};
   }
 
-  getBundleInfoFromCache(infoKey: string): void | Promise<?BundleInfo> {
+  getBundleInfoFromCache(infoKey: string): Async<?BundleInfo> {
     if (this.options.disableCache) {
       return;
     }

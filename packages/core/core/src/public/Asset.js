@@ -194,7 +194,7 @@ class BaseAsset {
 export class Asset extends BaseAsset implements IAsset {
   #asset: CommittedAsset | UncommittedAsset;
 
-  constructor(asset: CommittedAsset | UncommittedAsset): void | Asset {
+  constructor(asset: CommittedAsset | UncommittedAsset): Asset {
     let existing = assetValueToAsset.get(asset.value);
     if (existing != null) {
       return existing;
@@ -203,6 +203,7 @@ export class Asset extends BaseAsset implements IAsset {
     super(asset);
     this.#asset = asset;
     assetValueToAsset.set(asset.value, this);
+    return this;
   }
 
   get stats(): Stats {
@@ -213,7 +214,7 @@ export class Asset extends BaseAsset implements IAsset {
 export class MutableAsset extends BaseAsset implements IMutableAsset {
   #asset: UncommittedAsset;
 
-  constructor(asset: UncommittedAsset): void | MutableAsset {
+  constructor(asset: UncommittedAsset): MutableAsset {
     let existing = assetValueToMutableAsset.get(asset.value);
     if (existing != null) {
       return existing;
@@ -223,6 +224,7 @@ export class MutableAsset extends BaseAsset implements IMutableAsset {
     this.#asset = asset;
     assetValueToMutableAsset.set(asset.value, this);
     _mutableAssetToUncommittedAsset.set(this, asset);
+    return this;
   }
 
   setMap(map: ?SourceMap): void {
