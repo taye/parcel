@@ -1,5 +1,5 @@
 // @flow strict-local
-import type WorkerFarm from '@parcel/workers';
+import type WorkerFarm, {SharedReference} from '@parcel/workers';
 import type AssetGraph from '../AssetGraph';
 import type RequestTracker, {RequestRunnerAPI} from '../RequestTracker';
 import type {
@@ -25,16 +25,16 @@ export default class AssetRequestRunner extends RequestRunner<
   AssetRequestResult,
 > {
   options: ParcelOptions;
-  optionsRef: number;
-  configRef: number;
+  optionsRef: SharedReference;
+  configRef: SharedReference;
   runTransform: TransformationOpts => Promise<AssetRequestResult>;
   assetGraph: AssetGraph;
 
   constructor(opts: {|
     tracker: RequestTracker,
     options: ParcelOptions,
-    optionsRef: number,
-    configRef: number,
+    optionsRef: SharedReference,
+    configRef: SharedReference,
     workerFarm: WorkerFarm,
     assetGraph: AssetGraph,
   |}) {

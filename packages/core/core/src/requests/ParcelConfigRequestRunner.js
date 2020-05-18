@@ -1,5 +1,5 @@
 // @flow strict-local
-import type WorkerFarm from '@parcel/workers';
+import type WorkerFarm, {SharedReference} from '@parcel/workers';
 import type RequestTracker, {RequestRunnerAPI} from '../RequestTracker';
 import type {ParcelOptions, ProcessedParcelConfig} from '../types';
 
@@ -8,7 +8,7 @@ import {RequestRunner} from '../RequestTracker';
 
 type ConfigAndRef = {|
   config: ProcessedParcelConfig,
-  configRef: number,
+  configRef: SharedReference,
 |};
 
 export default class ParcelConfigRequestRunner extends RequestRunner<
@@ -33,7 +33,6 @@ export default class ParcelConfigRequestRunner extends RequestRunner<
   async run(request: null, api: RequestRunnerAPI): Promise<ConfigAndRef> {
     let {config, extendedFiles} = await loadParcelConfig(this.options);
     let processedConfig = config.getConfig();
-    // $FlowFixMe no idea
     let {ref, dispose} = await this.workerFarm.createSharedReference(
       processedConfig,
     );

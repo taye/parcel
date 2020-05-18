@@ -8,7 +8,7 @@ import type {
 } from './types';
 import BundleGraph from './BundleGraph';
 import type {ConfigRequestAndResult} from './Transformation';
-import type {WorkerApi} from '@parcel/workers';
+import type {SharedReference, WorkerApi} from '@parcel/workers';
 
 import Transformation, {type TransformationOpts} from './Transformation';
 import {reportWorker} from './ReporterRunner';
@@ -27,13 +27,13 @@ registerCoreWithSerializer();
 // https://github.com/facebook/flow/issues/2835
 type WorkerTransformationOpts = {|
   ...$Diff<TransformationOpts, {|workerApi: mixed, options: ParcelOptions|}>,
-  optionsRef: number,
-  configRef: number,
+  optionsRef: SharedReference,
+  configRef: SharedReference,
 |};
 type WorkerValidationOpts = {|
   ...$Diff<ValidationOpts, {|workerApi: mixed, options: ParcelOptions|}>,
-  optionsRef: number,
-  configRef: number,
+  optionsRef: SharedReference,
+  configRef: SharedReference,
 |};
 
 export function runTransform(
@@ -105,14 +105,14 @@ export function runPackage(
     optionsRef,
   }: {|
     bundle: Bundle,
-    bundleGraphReference: number,
-    configRef: number,
+    bundleGraphReference: SharedReference,
+    configRef: SharedReference,
     cacheKeys: {|
       content: string,
       map: string,
       info: string,
     |},
-    optionsRef: number,
+    optionsRef: SharedReference,
   |},
 ): Promise<{|hash: string, hashReferences: Array<$FlowFixMe>, size: number|}> {
   let bundleGraph = workerApi.getSharedReference(bundleGraphReference);

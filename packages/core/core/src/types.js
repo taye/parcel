@@ -29,7 +29,7 @@ import type {
   TargetDescriptor,
   HMROptions,
 } from '@parcel/types';
-
+import type {SharedReference} from '@parcel/workers';
 import type {FileSystem} from '@parcel/fs';
 import type Cache from '@parcel/cache';
 import type {PackageManager} from '@parcel/package-manager';
@@ -380,14 +380,14 @@ export type BundleGroupNode = {|
 
 export type TransformationOpts = {|
   request: AssetRequestDesc,
-  optionsRef: number,
-  configRef: number,
+  optionsRef: SharedReference,
+  configRef: SharedReference,
 |};
 
 export type ValidationOpts = {|
   requests: AssetRequestDesc[],
-  optionsRef: number,
-  configRef: number,
+  optionsRef: SharedReference,
+  configRef: SharedReference,
 |};
 
 export type ReportFn = (event: ReporterEvent) => void;

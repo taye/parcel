@@ -44,7 +44,8 @@ export default class Cache {
     return this.fs.exists(this._getCachePath(key, '.blob'));
   }
 
-  getBlob(key: string, encoding?: buffer$Encoding): any {
+  getBlob<T>(key: string, encoding?: buffer$Encoding): Promise<?T> {
+    // $FlowFixMe
     return this.fs.readFile(this._getCachePath(key, '.blob'), encoding);
   }
 
@@ -53,7 +54,7 @@ export default class Cache {
     return key;
   }
 
-  async get(key: string): Promise<any> {
+  async get<T>(key: string): Promise<?T> {
     try {
       let data = await this.fs.readFile(this._getCachePath(key));
       return deserialize(data);

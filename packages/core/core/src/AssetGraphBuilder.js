@@ -2,7 +2,7 @@
 
 import type {AbortSignal} from 'abortcontroller-polyfill/dist/cjs-ponyfill';
 import type {FilePath} from '@parcel/types';
-import type WorkerFarm, {Handle} from '@parcel/workers';
+import type WorkerFarm, {Handle, SharedReference} from '@parcel/workers';
 import type {Event} from '@parcel/watcher';
 import type {
   Asset,
@@ -43,7 +43,7 @@ import dumpToGraphViz from './dumpGraphToGraphViz';
 
 type Opts = {|
   options: ParcelOptions,
-  optionsRef: number,
+  optionsRef: SharedReference,
   name: string,
   entries?: Array<string>,
   assetRequests?: Array<AssetRequestDesc>,
@@ -72,9 +72,9 @@ export default class AssetGraphBuilder extends EventEmitter {
 
   changedAssets: Map<string, Asset> = new Map();
   options: ParcelOptions;
-  optionsRef: number;
+  optionsRef: SharedReference;
   config: ParcelConfig;
-  configRef: number;
+  configRef: SharedReference;
   workerFarm: WorkerFarm;
   cacheKey: string;
   entries: ?Array<string>;
@@ -430,8 +430,10 @@ export default class AssetGraphBuilder extends EventEmitter {
     }
 
     let {assetGraphKey, requestGraphKey, snapshotKey} = this.getCacheKeys();
-    let assetGraph = await this.options.cache.get(assetGraphKey);
-    let requestGraph = await this.options.cache.get(requestGraphKey);
+    let assetGraph = await this.options.cache.get<AssetGraph>(assetGraphKey);
+    let requestGraph = await this.options.cache.get<RequestGraph>(
+      requestGraphKey,
+    );
 
     if (assetGraph && requestGraph) {
       this.assetGraph = assetGraph;

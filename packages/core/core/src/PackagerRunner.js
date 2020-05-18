@@ -10,7 +10,7 @@ import type {
   Async,
 } from '@parcel/types';
 import type SourceMap from '@parcel/source-map';
-import type WorkerFarm from '@parcel/workers';
+import type WorkerFarm, {SharedReference} from '@parcel/workers';
 import type {Bundle as InternalBundle, ParcelOptions, ReportFn} from './types';
 import type ParcelConfig from './ParcelConfig';
 import type InternalBundleGraph from './BundleGraph';
@@ -40,10 +40,10 @@ import {PARCEL_VERSION, HASH_REF_PREFIX, HASH_REF_REGEX} from './constants';
 
 type Opts = {|
   config: ParcelConfig,
-  configRef?: number,
+  configRef?: SharedReference,
   farm?: WorkerFarm,
   options: ParcelOptions,
-  optionsRef?: number,
+  optionsRef?: SharedReference,
   report: ReportFn,
 |};
 
@@ -63,9 +63,9 @@ const BOUNDARY_LENGTH = HASH_REF_PREFIX.length + 32 - 1;
 
 export default class PackagerRunner {
   config: ParcelConfig;
-  configRef: ?number;
+  configRef: ?SharedReference;
   options: ParcelOptions;
-  optionsRef: ?number;
+  optionsRef: ?SharedReference;
   farm: ?WorkerFarm;
   pluginOptions: PluginOptions;
   distDir: FilePath;
@@ -73,10 +73,10 @@ export default class PackagerRunner {
   report: ReportFn;
   getBundleInfoFromWorker: ({|
     bundle: InternalBundle,
-    bundleGraphReference: number,
-    configRef: number,
+    bundleGraphReference: mixed,
+    configRef: SharedReference,
     cacheKeys: CacheKeyMap,
-    optionsRef: number,
+    optionsRef: SharedReference,
   |}) => Promise<BundleInfo>;
 
   constructor({config, configRef, farm, options, optionsRef, report}: Opts) {
@@ -99,7 +99,6 @@ export default class PackagerRunner {
 
   async writeBundles(bundleGraph: InternalBundleGraph) {
     let farm = nullthrows(this.farm);
-    // $FlowFixMe no idea
     let {ref, dispose} = await farm.createSharedReference(bundleGraph);
 
     let bundleInfoMap = {};
@@ -141,7 +140,7 @@ export default class PackagerRunner {
   async processBundle(
     bundle: InternalBundle,
     bundleGraph: InternalBundleGraph,
-    bundleGraphReference: number,
+    bundleGraphReference: mixed,
   ): Promise<{|
     ...BundleInfo,
     cacheKeys: CacheKeyMap,
@@ -167,12 +166,12 @@ export default class PackagerRunner {
     return {time: Date.now() - start, hash, hashReferences, cacheKeys};
   }
 
-  getBundleInfoFromCache(infoKey: string): void | Promise<BundleInfo> {
+  getBundleInfoFromCache(infoKey: string): void | Promise<?BundleInfo> {
     if (this.options.disableCache) {
       return;
     }
 
-    return this.options.cache.get(infoKey);
+    return this.options.cache.get<BundleInfo>(infoKey);
   }
 
   async getBundleInfo(
@@ -181,7 +180,7 @@ export default class PackagerRunner {
     cacheKeys: CacheKeyMap,
   ): Promise<{|
     hash: string,
-    hashReferences: Array<$FlowFixMe>,
+    hashReferences: Array<string>,
     size: number,
   |}> {
     let {contents, map} = await this.getBundleResult(bundle, bundleGraph);
@@ -362,7 +361,6 @@ export default class PackagerRunner {
       bundle.isInline ||
       (bundle.target.sourceMap && bundle.target.sourceMap.inline);
 
-    // $FlowFixMe format is never object so it's always a string...
     return map.stringify({
       file: path.basename(mapFilename),
       fs: this.options.inputFS,
@@ -495,7 +493,7 @@ export default class PackagerRunner {
     map: ?Blob,
   ): Promise<{|
     hash: string,
-    hashReferences: Array<$FlowFixMe>,
+    hashReferences: Array<string>,
     size: number,
   |}> {
     let size = 0;

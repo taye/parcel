@@ -10,11 +10,11 @@ import type {
   ModuleSpecifier,
   NamedBundle as INamedBundle,
 } from '@parcel/types';
-import type {Bundle, ParcelOptions} from './types';
+import type {AssetRequestResult, Bundle, ParcelOptions} from './types';
 import type {FarmOptions} from '@parcel/workers';
 import type {Diagnostic} from '@parcel/diagnostic';
 import type {AbortSignal} from 'abortcontroller-polyfill/dist/cjs-ponyfill';
-import typeof ParcelConfig from './ParcelConfig';
+import type ParcelConfig from './ParcelConfig';
 
 import invariant from 'assert';
 import ThrowableDiagnostic, {anyToDiagnostic} from '@parcel/diagnostic';
@@ -95,7 +95,6 @@ export default class Parcel {
     );
     this.#resolvedOptions = resolvedOptions;
     await createCacheDir(resolvedOptions.outputFS, resolvedOptions.cacheDir);
-    // $FlowFixMe no idea
     let {config} = await loadParcelConfig(resolvedOptions);
     this.#config = config;
     this.#farm =
@@ -106,11 +105,9 @@ export default class Parcel {
 
     // ? Should we have a dispose function on the Parcel class or should we create these references
     //  - in run and watch and dispose at the end of run and in the unsubsribe function of watch
-    // $FlowFixMe no idea
     let {ref: optionsRef} = await this.#farm.createSharedReference(
       resolvedOptions,
     );
-    // $FlowFixMe no idea
     let {ref: configRef} = await this.#farm.createSharedReference(
       config.getConfig(),
     );
@@ -334,7 +331,7 @@ export default class Parcel {
     filePath: FilePath,
     env: EnvironmentOpts,
     code?: string,
-  |}): $FlowFixMe {
+  |}): Promise<AssetRequestResult> {
     let [result] = await Promise.all([
       this.#assetGraphBuilder.runTransform({
         filePath,
