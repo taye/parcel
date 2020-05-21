@@ -10,10 +10,11 @@ import type {
   ModuleSpecifier,
   NamedBundle as INamedBundle,
 } from '@parcel/types';
-import type {AssetRequestResult, Bundle, ParcelOptions} from './types';
+import type {AssetRequestResult, ParcelOptions} from './types';
 import type {FarmOptions} from '@parcel/workers';
 import type {Diagnostic} from '@parcel/diagnostic';
 import type {AbortSignal} from 'abortcontroller-polyfill/dist/cjs-ponyfill';
+// eslint-disable-next-line no-unused-vars
 import type ParcelConfig from './ParcelConfig';
 
 import invariant from 'assert';
@@ -45,18 +46,18 @@ export const INTERNAL_TRANSFORM: symbol = Symbol('internal_transform');
 export const INTERNAL_RESOLVE: symbol = Symbol('internal_resolve');
 
 export default class Parcel {
-  #assetGraphBuilder: AssetGraphBuilder;
-  #runtimesAssetGraphBuilder: AssetGraphBuilder;
-  #bundlerRunner: BundlerRunner;
-  #packagerRunner: PackagerRunner;
-  #config: ParcelConfig;
-  #farm: WorkerFarm;
-  #initialized /*: boolean */ = false;
-  #initialOptions: InitialParcelOptions;
-  #reporterRunner: ReporterRunner;
-  #resolvedOptions: ?ParcelOptions = null;
-  #watchAbortController: AbortController;
-  #watchQueue /*: PromiseQueue<?BuildEvent> */ = new PromiseQueue<?BuildEvent>({
+  #assetGraphBuilder /*: AssetGraphBuilder*/;
+  #runtimesAssetGraphBuilder /*: AssetGraphBuilder*/;
+  #bundlerRunner /*: BundlerRunner*/;
+  #packagerRunner /*: PackagerRunner*/;
+  #config /*: ParcelConfig*/;
+  #farm /*: WorkerFarm*/;
+  #initialized /*: boolean*/ = false;
+  #initialOptions /*: InitialParcelOptions*/;
+  #reporterRunner /*: ReporterRunner*/;
+  #resolvedOptions /*: ?ParcelOptions*/ = null;
+  #watchAbortController /*: AbortController*/;
+  #watchQueue /*: PromiseQueue<?BuildEvent>*/ = new PromiseQueue<?BuildEvent>({
     maxConcurrent: 1,
   });
   #watchEvents /*: ValueEmitter<
@@ -78,8 +79,8 @@ export default class Parcel {
         +error?: void,
       |},
   >();
-  #watcherSubscription: ?AsyncSubscription;
-  #watcherCount: number = 0;
+  #watcherSubscription /*: ?AsyncSubscription*/;
+  #watcherCount /*: number*/ = 0;
 
   constructor(options: InitialParcelOptions) {
     this.#initialOptions = options;

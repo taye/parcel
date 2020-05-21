@@ -74,9 +74,11 @@ export function generateBundleImports(
 }
 
 export function generateExternalImport(
-  _: Bundle,
+  // eslint-disable-next-line no-unused-vars
+  bundle: Bundle,
   {loc}: ExternalModule,
-  __: NodePath<Program>,
+  // eslint-disable-next-line no-unused-vars
+  path: NodePath<Program>,
 ) {
   throw getThrowableDiagnosticForNode(
     'External modules are not supported when building for browser',
@@ -90,8 +92,10 @@ export function generateExports(
   bundle: NamedBundle,
   referencedAssets: Set<Asset>,
   path: NodePath<Program>,
+  // eslint-disable-next-line no-unused-vars
   replacements: Map<Symbol, Symbol>,
-  _: PluginOptions,
+  // eslint-disable-next-line no-unused-vars
+  options: PluginOptions,
 ): Set<Symbol> {
   let exported = new Set<Symbol>();
   let statements: Array<ExpressionStatement> = [];
