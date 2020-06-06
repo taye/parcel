@@ -49,6 +49,7 @@ export function nodeFromAssetGroup(assetGroup: AssetGroup) {
     id: md5FromObject(assetGroup),
     type: 'asset_group',
     value: assetGroup,
+    usedSymbols: new Set(),
   };
 }
 
@@ -57,6 +58,7 @@ export function nodeFromAsset(asset: Asset) {
     id: asset.id,
     type: 'asset',
     value: asset,
+    usedSymbols: new Set(),
   };
 }
 
@@ -185,6 +187,7 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     }
 
     this.replaceNodesConnectedTo(depNode, [nodeFromAssetGroup(assetGroup)]);
+    // TODO update assetGroup.children[*].usedSymbols
   }
 
   shouldVisitChild(node: AssetGraphNode, childNode: AssetGraphNode) {
@@ -253,34 +256,76 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
   // a huge number of functions since we can avoid even transforming the files that aren't used.
   shouldDeferDependency(dependency: Dependency, sideEffects: ?boolean) {
     let defer = false;
-    if (
-      dependency.isWeak &&
-      sideEffects === false &&
-      !dependency.symbols.has('*')
-    ) {
+    if (dependency.isWeak && sideEffects === false) {
       let depNode = this.getNode(dependency.id);
       invariant(depNode);
 
-      let assets = this.getNodesConnectedTo(depNode);
-      let symbols = new Map(
-        [...dependency.symbols].map(([key, val]) => [val.local, key]),
-      );
-      invariant(assets.length === 1);
-      let firstAsset = assets[0];
-      invariant(firstAsset.type === 'asset');
-      let resolvedAsset = firstAsset.value;
-      let deps = this.getIncomingDependencies(resolvedAsset);
-      defer = deps.every(
-        d =>
-          !(d.env.isLibrary && d.isEntry) &&
-          !d.symbols.has('*') &&
-          ![...d.symbols.keys()].some(symbol => {
-            let assetSymbol = resolvedAsset.symbols?.get(symbol)?.local;
-            return assetSymbol != null && symbols.has(assetSymbol);
-          }),
-      );
+      let dependers = this.getNodesConnectedTo(depNode);
+      invariant(dependers.length === 1);
+      let depender = dependers[0];
+      invariant(depender.type === 'asset');
+      let dependerSymbolsInverse = depender.value.symbols
+        ? new Map(
+            [...depender.value.symbols].map(([key, val]) => [val.local, key]),
+          )
+        : null;
+
+      let deps = this.getIncomingDependencies(depender.value);
+
+      defer =
+        !deps.some(d => d.env.isLibrary && d.isEntry) &&
+        ![...dependency.symbols].some(([, {local}]) => {
+          if (!dependerSymbolsInverse) return true;
+          let reexport = dependerSymbolsInverse.get(local);
+          return reexport != null ? depender.usedSymbols.has(reexport) : true;
+        });
     }
     return defer;
+  }
+
+  getUsedSymbols(asset: Asset): Set<string> {
+    let symbols: Array<Array<string>> = this.getIncomingDependencies(asset).map(
+      dep => {
+        let depNode = this.getNode(dep.id);
+        invariant(depNode);
+        let dependers = this.getNodesConnectedTo(depNode);
+        invariant(dependers.length === 1);
+        let depender = dependers[0];
+        if (depender.type !== 'asset') {
+          // entry_file
+          return [];
+        }
+        let dependerSymbolsInverse = depender.value.symbols
+          ? new Map(
+              [...depender.value.symbols].map(([key, val]) => [val.local, key]),
+            )
+          : null;
+
+        // (`depender` --`dep`--> `asset`)
+        // Get all symbols in `dep.symbols.keys()` that are
+        // - part of `depender.symbols` AND in `depender.usedSymbols` (= reexported by `depender` & used) or
+        // - not part of `depender.symbols` (= not reexported)
+        // TODO the comment
+
+        let depReexportAll = dep.symbols.get('*');
+        if (depReexportAll && depReexportAll.local === '*') {
+          return [...depender.usedSymbols];
+        }
+
+        return [...dep.symbols]
+          .filter(([, {local}]) => {
+            if (!dependerSymbolsInverse) {
+              // TODO move out of loop
+              return true;
+            }
+            let reexport = dependerSymbolsInverse.get(local);
+            return reexport != null ? depender.usedSymbols.has(reexport) : true;
+          })
+          .map(([exportSymbol]) => exportSymbol);
+      },
+    );
+    // $FlowFixMe
+    return new Set(symbols.flat());
   }
 
   resolveAssetGroup(
@@ -327,6 +372,8 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
       assetObjects.filter(a => a.isDirect).map(a => a.assetNode),
     );
     for (let {assetNode, dependentAssets} of assetObjects) {
+      assetNode.usedSymbols = this.getUsedSymbols(assetNode.value);
+
       this.resolveAsset(assetNode, dependentAssets);
     }
   }

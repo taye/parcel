@@ -55,10 +55,24 @@ export default async function dumpGraphToGraphViz(
       if (node.hasDeferred) parts.push('deferred');
       if (parts.length) label += ' (' + parts.join(', ') + ')';
       if (node.value.env) label += ` (${getEnvDescription(node.value.env)})`;
+      if (node.value.symbols.size) {
+        label +=
+          '\nsymbols: ' +
+          [...node.value.symbols].map(([e, {local}]) => [e, local]).join(';');
+      }
     } else if (node.type === 'asset') {
       label += path.basename(node.value.filePath) + '#' + node.value.type;
+      if (node.value.symbols && node.value.symbols.size) {
+        label +=
+          '\nsymbols: ' +
+          [...node.value.symbols].map(([e, {local}]) => [e, local]).join(';');
+      }
+      if (node.usedSymbols.size) {
+        label += '\nusedSymbols: ' + [...node.usedSymbols].join(',');
+      }
     } else if (node.type === 'asset_group') {
-      if (node.deferred) label += '(deferred)';
+      if (node.deferred)
+        label += '(deferred)' + '\n' + [...node.usedSymbols].join(';');
     } else if (node.type === 'file') {
       label += path.basename(node.value.filePath);
     } else if (node.type === 'transformer_request') {
