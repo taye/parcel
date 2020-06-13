@@ -711,6 +711,8 @@ export interface BundleGraph<TBundle: Bundle> {
     visit: GraphVisitor<TBundle, TContext>,
     startBundle: ?Bundle,
   ): ?TContext;
+  getUsedSymbolsAsset(asset: Asset): $ReadOnlySet<Symbol>;
+  getUsedSymbolsDependency(dep: Dependency): $ReadOnlySet<Symbol>;
 }
 
 export type BundleResult = {|

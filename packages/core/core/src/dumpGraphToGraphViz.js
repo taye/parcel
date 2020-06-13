@@ -60,6 +60,9 @@ export default async function dumpGraphToGraphViz(
           '\nsymbols: ' +
           [...node.value.symbols].map(([e, {local}]) => [e, local]).join(';');
       }
+      if (node.usedSymbols.size) {
+        label += '\nusedSymbols: ' + [...node.usedSymbols].join(',');
+      }
     } else if (node.type === 'asset') {
       label += path.basename(node.value.filePath) + '#' + node.value.type;
       if (node.value.symbols && node.value.symbols.size) {

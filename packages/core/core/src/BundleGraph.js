@@ -913,6 +913,17 @@ export default class BundleGraph {
     hash.update(JSON.stringify(objectSortedEntriesDeep(bundle.env)));
     return hash.digest('hex');
   }
+
+  getUsedSymbolsAsset(asset: Asset): $ReadOnlySet<Symbol> {
+    let node = this._graph.getNode(asset.id);
+    invariant(node && node.type === 'asset');
+    return node.usedSymbols;
+  }
+  getUsedSymbolsDependency(dep: Dependency): Set<Symbol> {
+    let node = this._graph.getNode(dep.id);
+    invariant(node && node.type === 'depedency');
+    return node.usedSymbols;
+  }
 }
 
 export function removeAssetGroups(

@@ -195,6 +195,7 @@ export type DependencyNode = {|
   complete?: boolean,
   correspondingRequest?: string,
   hasDeferred?: boolean,
+  usedSymbols: Set<Symbol>,
 |};
 
 export type RootNode = {|id: string, +type: 'root', value: string | null|};

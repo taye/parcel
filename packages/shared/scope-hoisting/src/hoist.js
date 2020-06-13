@@ -661,7 +661,13 @@ const VISITOR: Visitor<MutableAsset> = {
       .getDependencies()
       .find(dep => dep.moduleSpecifier === path.node.source.value);
     if (dep) {
-      dep.symbols.set('*', '*', convertBabelLoc(path.node.loc));
+      asset.addDependency({
+        moduleSpecifier: dep.moduleSpecifier,
+        symbols: new Map([
+          ['*', {local: '*', loc: convertBabelLoc(path.node.loc)}],
+        ]),
+        isWeak: true,
+      });
     }
 
     path.replaceWith(

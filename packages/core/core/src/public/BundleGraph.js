@@ -269,4 +269,13 @@ export default class BundleGraph<TBundle: IBundle>
         this.#createBundle.call(null, bundle, this.#graph, this.#options),
       );
   }
+
+  getUsedSymbolsAsset(asset: IAsset): $ReadOnlySet<Symbol> {
+    return this.#graph.getUsedSymbolsAsset(assetToAssetValue(asset));
+  }
+  getUsedSymbolsDependency(dep: IDependency): $ReadOnlySet<Symbol> {
+    return this.#graph.getUsedSymbolsDependency(
+      dependencyToInternalDependency(dep),
+    );
+  }
 }
