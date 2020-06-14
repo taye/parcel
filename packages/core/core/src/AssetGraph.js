@@ -50,11 +50,10 @@ export function nodeFromAssetGroup(assetGroup: AssetGroup) {
     id: md5FromObject(assetGroup),
     type: 'asset_group',
     value: assetGroup,
-    usedSymbols: new Set(),
   };
 }
 
-export function nodeFromAsset(asset: Asset) {
+export function nodeFromAsset(asset: Asset): AssetNode {
   return {
     id: asset.id,
     type: 'asset',
@@ -284,6 +283,17 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     let reexportedSymbols = new Set<string>();
     for (let incomingDep of incomingDeps) {
       for (let exportSymbol of incomingDep.usedSymbols) {
+        if (exportSymbol === '*') {
+          // if (assetNode.value.symbols) {
+          //   for (let [s] of assetNode.value.symbols) {
+          //     assetUsedSymbols.add(s);
+          //   }
+          // } else {
+          assetUsedSymbols.add('*');
+          // }
+          reexportedSymbols.add('*');
+          break;
+        }
         if (assetSymbols?.has(exportSymbol)) {
           // own symbol or non-namespace reexport
           assetUsedSymbols.add(exportSymbol);
@@ -306,7 +316,11 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
             dep.usedSymbols.add(symbol);
           } else {
             let reexport = assetSymbolsInverse.get(local);
-            if (reexport == null || assetUsedSymbols.has(reexport)) {
+            if (
+              reexport == null ||
+              assetUsedSymbols.has('*') ||
+              assetUsedSymbols.has(reexport)
+            ) {
               if (reexport != null) assetUsedSymbols.delete(reexport);
               dep.usedSymbols.add(symbol);
             }

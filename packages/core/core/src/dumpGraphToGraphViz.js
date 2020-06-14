@@ -74,8 +74,7 @@ export default async function dumpGraphToGraphViz(
         label += '\nusedSymbols: ' + [...node.usedSymbols].join(',');
       }
     } else if (node.type === 'asset_group') {
-      if (node.deferred)
-        label += '(deferred)' + '\n' + [...node.usedSymbols].join(';');
+      if (node.deferred) label += '(deferred)' + '\n';
     } else if (node.type === 'file') {
       label += path.basename(node.value.filePath);
     } else if (node.type === 'transformer_request') {

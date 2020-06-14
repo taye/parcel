@@ -217,7 +217,6 @@ export type AssetGroupNode = {|
   id: string,
   +type: 'asset_group',
   value: AssetGroup,
-  usedSymbols: Set<Symbol>,
   deferred?: boolean,
   correspondingRequest?: string,
   hasDeferred?: boolean,

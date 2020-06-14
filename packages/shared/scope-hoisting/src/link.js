@@ -475,7 +475,7 @@ export function link({
             }
           }
         } else {
-          if (mod.meta.id && assets.get(assertString(mod.meta.id))) {
+          if (mod.meta.id && assets.has(assertString(mod.meta.id))) {
             let name = assertString(mod.meta.exportsIdentifier);
 
             let isValueUsed = !isUnusedValue(path);
