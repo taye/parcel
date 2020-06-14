@@ -291,12 +291,12 @@ export type DependencyOptions = {|
   +isEntry?: boolean,
   +isOptional?: boolean,
   +isURL?: boolean,
-  +isWeak?: ?boolean,
   +loc?: SourceLocation,
   +env?: EnvironmentOpts,
   +meta?: Meta,
   +target?: Target,
   +symbols?: $ReadOnlyMap<Symbol, {|local: Symbol, loc: ?SourceLocation|}>,
+  +weakSymbols?: Set<Symbol>,
 |};
 
 export interface Dependency {
@@ -306,7 +306,6 @@ export interface Dependency {
   +isEntry: boolean;
   +isOptional: boolean;
   +isURL: boolean;
-  +isWeak: ?boolean;
   +loc: ?SourceLocation;
   +env: Environment;
   +meta: Meta;
@@ -315,9 +314,10 @@ export interface Dependency {
   +sourcePath: ?string;
   +pipeline: ?string;
 
-  // (imported symbol -> variable that it is used as)
   // TODO make immutable
+  // (imported symbol -> variable that it is used as)
   +symbols: MutableSymbols;
+  +weakSymbols: Set<Symbol>;
 }
 
 export type File = {|

@@ -71,7 +71,7 @@ class MutableSymbols {
   /*::
   @@iterator(): Iterator<[Symbol, {|local: Symbol, loc: ?SourceLocation|}]> { return ({}: any); }
   */
-  #value; // Asset
+  #value: Asset | Dependency;
 
   constructor(asset: Asset | Dependency) {
     this.#value = asset;
@@ -133,7 +133,7 @@ export class MutableDependencySymbols extends MutableSymbols
 
 export class MutableAssetSymbols extends MutableSymbols
   implements IMutableSymbols {
-  #asset; // Asset
+  #asset: Asset;
   constructor(asset: Asset) {
     super(asset);
     let existing = valueToMutableSymbols.get(asset);

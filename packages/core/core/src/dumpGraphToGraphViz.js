@@ -50,7 +50,6 @@ export default async function dumpGraphToGraphViz(
       let parts = [];
       if (node.value.isEntry) parts.push('entry');
       if (node.value.isAsync) parts.push('async');
-      if (node.value.isWeak) parts.push('weak');
       if (node.value.isOptional) parts.push('optional');
       if (node.hasDeferred) parts.push('deferred');
       if (parts.length) label += ' (' + parts.join(', ') + ')';
@@ -59,6 +58,9 @@ export default async function dumpGraphToGraphViz(
         label +=
           '\nsymbols: ' +
           [...node.value.symbols].map(([e, {local}]) => [e, local]).join(';');
+      }
+      if (node.value.weakSymbols.size) {
+        label += '\nweakSymbols: ' + [...node.value.weakSymbols].join(',');
       }
       if (node.usedSymbols.size) {
         label += '\nusedSymbols: ' + [...node.usedSymbols].join(',');

@@ -89,7 +89,6 @@ export type Dependency = {|
   isEntry: boolean,
   isOptional: boolean,
   isURL: boolean,
-  isWeak: ?boolean,
   loc: ?SourceLocation,
   env: Environment,
   meta: Meta,
@@ -97,6 +96,7 @@ export type Dependency = {|
   sourceAssetId: ?string,
   sourcePath: ?string,
   symbols: Map<Symbol, {|local: Symbol, loc: ?SourceLocation|}>,
+  weakSymbols: Set<Symbol>,
   pipeline?: ?string,
 |};
 

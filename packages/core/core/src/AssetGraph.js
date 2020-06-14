@@ -255,11 +255,7 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
   // This helps with performance building large libraries like `lodash-es`, which re-exports
   // a huge number of functions since we can avoid even transforming the files that aren't used.
   shouldDeferDependency(dependency: DependencyNode, sideEffects: ?boolean) {
-    return !!(
-      sideEffects === false &&
-      dependency.value.isWeak &&
-      dependency.usedSymbols.size == 0
-    );
+    return !!(sideEffects === false && dependency.usedSymbols.size == 0);
   }
 
   setUsedSymbolsAsset(
@@ -312,7 +308,7 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
         }
       } else {
         for (let [symbol, {local}] of dep.value.symbols) {
-          if (!assetSymbolsInverse) {
+          if (!assetSymbolsInverse || !dep.value.weakSymbols.has(symbol)) {
             dep.usedSymbols.add(symbol);
           } else {
             let reexport = assetSymbolsInverse.get(local);

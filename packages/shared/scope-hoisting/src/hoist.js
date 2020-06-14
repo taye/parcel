@@ -17,23 +17,23 @@ import type {
 import * as t from '@babel/types';
 import {
   isAssignmentExpression,
-  isCallExpression,
+  // isCallExpression,
   isClassDeclaration,
   isExportDefaultSpecifier,
   isExportNamespaceSpecifier,
   isExportSpecifier,
   isExpression,
-  isExpressionStatement,
-  isFunction,
+  // isExpressionStatement,
+  // isFunction,
   isFunctionDeclaration,
   isIdentifier,
   isImportDefaultSpecifier,
   isImportNamespaceSpecifier,
   isImportSpecifier,
   isMemberExpression,
-  isObjectPattern,
-  isObjectProperty,
-  isSequenceExpression,
+  // isObjectPattern,
+  // isObjectProperty,
+  // isSequenceExpression,
   isStringLiteral,
   isUnaryExpression,
 } from '@babel/types';
@@ -644,13 +644,8 @@ const VISITOR: Visitor<MutableAsset> = {
           if (existing) {
             id.name = existing;
           } else {
-            // this will merge with the existing dependency
-            let loc = convertBabelLoc(specifier.loc);
-            asset.addDependency({
-              moduleSpecifier: dep.moduleSpecifier,
-              symbols: new Map([[imported, {local: id.name, loc}]]),
-              isWeak: true,
-            });
+            dep.symbols.set(imported, id.name, convertBabelLoc(specifier.loc));
+            dep.weakSymbols.add(imported);
           }
         }
 
@@ -698,13 +693,8 @@ const VISITOR: Visitor<MutableAsset> = {
       .getDependencies()
       .find(dep => dep.moduleSpecifier === path.node.source.value);
     if (dep) {
-      asset.addDependency({
-        moduleSpecifier: dep.moduleSpecifier,
-        symbols: new Map([
-          ['*', {local: '*', loc: convertBabelLoc(path.node.loc)}],
-        ]),
-        isWeak: true,
-      });
+      dep.symbols.set('*', '*', convertBabelLoc(path.node.loc));
+      dep.weakSymbols.add('*');
     }
 
     path.replaceWith(
@@ -842,13 +832,13 @@ function getCJSExportsIdentifier(asset: MutableAsset, scope) {
   }
 }
 
-function isUnusedValue(path) {
-  let {parent} = path;
-  return (
-    isExpressionStatement(parent) ||
-    (isSequenceExpression(parent) &&
-      ((Array.isArray(path.container) &&
-        path.key !== path.container.length - 1) ||
-        isUnusedValue(path.parentPath)))
-  );
-}
+// function isUnusedValue(path) {
+//   let {parent} = path;
+//   return (
+//     isExpressionStatement(parent) ||
+//     (isSequenceExpression(parent) &&
+//       ((Array.isArray(path.container) &&
+//         path.key !== path.container.length - 1) ||
+//         isUnusedValue(path.parentPath)))
+//   );
+// }

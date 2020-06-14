@@ -464,7 +464,11 @@ export function link({
             path.replaceWith(
               THROW_TEMPLATE({MODULE: t.stringLiteral(source.value)}),
             );
-          } else if (dep.isWeak && bundleGraph.isDependencyDeferred(dep)) {
+          } else if (
+            /*
+             * TODO was isWeak really needed?
+             * dep.isWeak && */ bundleGraph.isDependencyDeferred(dep)
+          ) {
             path.remove();
           } else {
             let name = addExternalModule(path, dep);
