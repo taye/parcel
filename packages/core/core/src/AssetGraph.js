@@ -152,8 +152,8 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     targets: Array<Target>,
     correspondingRequest: string,
   ) {
-    let depNodes = targets.map(target =>
-      nodeFromDep(
+    let depNodes = targets.map(target => {
+      let node = nodeFromDep(
         createDependency({
           moduleSpecifier: entry.filePath,
           pipeline: target.name,
@@ -161,8 +161,13 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
           env: target.env,
           isEntry: true,
         }),
-      ),
-    );
+      );
+      if (target.env.isLibrary) {
+        // in library mode, all of the entry's symbols are "used"
+        node.usedSymbols.add('*');
+      }
+      return node;
+    });
 
     let entryNode = nullthrows(this.getNode(nodeFromEntryFile(entry).id));
     invariant(entryNode.type === 'entry_file');
