@@ -259,8 +259,37 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
   // using a wildcard and isn't an entry (in library mode).
   // This helps with performance building large libraries like `lodash-es`, which re-exports
   // a huge number of functions since we can avoid even transforming the files that aren't used.
-  shouldDeferDependency(dependency: DependencyNode, sideEffects: ?boolean) {
-    return !!(sideEffects === false && dependency.usedSymbols.size == 0);
+  shouldDeferDependency(
+    dependency: DependencyNode,
+    sideEffects: ?boolean,
+  ): boolean {
+    // return !!(sideEffects === false && dependency.usedSymbols.size == 0);
+
+    // TODO do we really want this?:
+    // one module does `export * from './esm.js'`.
+    // then esm.js has `import something from 'commonjs'`, esm.js doesn’t have any used symbols and isn’t included.
+    // but commonjs was still getting included.
+    if (sideEffects !== false) return false;
+    if (dependency.usedSymbols.size === 0) return true;
+    let parentAsset =
+      dependency.value.sourceAssetId != null &&
+      this.getNode(dependency.value.sourceAssetId);
+    if (parentAsset) {
+      invariant(parentAsset.type === 'asset');
+      if (
+        parentAsset.value.symbols != null &&
+        parentAsset.value.symbols.size > 0 &&
+        parentAsset.usedSymbols.size === 0
+      ) {
+        return this.getIncomingDependencies(parentAsset.value).every(d => {
+          let n = this.getNode(d.id);
+          invariant(n && n.type === 'dependency');
+          return n.usedSymbols.size === 0;
+        });
+      }
+      return false;
+    }
+    return false;
   }
 
   setUsedSymbolsAsset(
