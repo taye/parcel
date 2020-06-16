@@ -921,7 +921,7 @@ export default class BundleGraph {
   }
   getUsedSymbolsDependency(dep: Dependency): Set<Symbol> {
     let node = this._graph.getNode(dep.id);
-    invariant(node && node.type === 'depedency');
+    invariant(node && node.type === 'dependency');
     return node.usedSymbols;
   }
 }

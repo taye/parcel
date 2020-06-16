@@ -99,8 +99,13 @@ export async function concat({
   // Node: for each asset, the order of `$parcel$require` calls and the corresponding
   // `asset.getDependencies()` must be the same!
   bundle.traverseAssets<TraversalContext>({
-    enter(asset, context) {
+    enter(asset, context, actions) {
       if (shouldSkipAsset(bundleGraph, asset)) {
+        return context;
+      }
+
+      if (shouldSkipSubgraph(bundleGraph, asset)) {
+        actions.skipChildren();
         return context;
       }
 
@@ -195,8 +200,19 @@ function parse(code, sourceFilename) {
 function shouldSkipAsset(bundleGraph: BundleGraph<NamedBundle>, asset: Asset) {
   return (
     asset.sideEffects === false &&
-    !asset.meta.isCommonJS &&
     bundleGraph.getUsedSymbolsAsset(asset).size == 0
+  );
+}
+
+function shouldSkipSubgraph(
+  bundleGraph: BundleGraph<NamedBundle>,
+  asset: Asset,
+) {
+  return (
+    asset.sideEffects === false &&
+    bundleGraph
+      .getIncomingDependencies(asset)
+      .every(d => bundleGraph.getUsedSymbolsDependency(d).size === 0)
   );
 }
 
