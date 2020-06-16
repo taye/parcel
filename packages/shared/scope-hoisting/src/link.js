@@ -464,12 +464,13 @@ export function link({
             path.replaceWith(
               THROW_TEMPLATE({MODULE: t.stringLiteral(source.value)}),
             );
-          } else if (
-            /*
-             * TODO was isWeak really needed?
-             * dep.isWeak && */ bundleGraph.isDependencyDeferred(dep)
-          ) {
-            path.remove();
+          } else if (bundleGraph.isDependencyDeferred(dep)) {
+            if (path.parentPath.isExpressionStatement()) {
+              path.parentPath.remove();
+            } else {
+              // e.g. $parcel$exportWildcard;
+              path.replaceWith(t.objectExpression([]));
+            }
           } else {
             let name = addExternalModule(path, dep);
             if (isUnusedValue(path) || !name) {
