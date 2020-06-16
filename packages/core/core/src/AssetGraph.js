@@ -302,57 +302,90 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
       return n;
     });
 
+    // exportSymbol -> identifier
     let assetSymbols = assetNode.value.symbols;
+    // identifier -> exportSymbol
     let assetSymbolsInverse = assetNode.value.symbols
       ? new Map(
           [...assetNode.value.symbols].map(([key, val]) => [val.local, key]),
         )
       : null;
 
+    let hasNamespaceOutgoingDeps = outgoingDeps.some(
+      d => d.value.symbols.get('*')?.local === '*',
+    );
+
+    let isEntry = false;
+    // used symbols that are either exported by asset or reexported (symbol will be removed again lated)
     let assetUsedSymbols = new Set<string>();
-    let reexportedSymbols = new Set<string>();
+    // symbols that have to be namespace reexported by asset
+    let namespaceReexportedSymbols = new Set<string>();
     for (let incomingDep of incomingDeps) {
+      if (incomingDep.value.isEntry) isEntry = true;
+
       for (let exportSymbol of incomingDep.usedSymbols) {
         if (exportSymbol === '*') {
-          // if (assetNode.value.symbols) {
-          //   for (let [s] of assetNode.value.symbols) {
-          //     assetUsedSymbols.add(s);
-          //   }
-          // } else {
-          assetUsedSymbols.add('*');
-          // }
-          reexportedSymbols.add('*');
+          // There is no point in continuing the loop here, everything is used anyway.
+          assetUsedSymbols = new Set(['*']);
+          namespaceReexportedSymbols = new Set(['*']);
           break;
         }
-        if (assetSymbols?.has(exportSymbol)) {
+        if (!assetSymbols || assetSymbols.has(exportSymbol)) {
           // own symbol or non-namespace reexport
           assetUsedSymbols.add(exportSymbol);
-        } else {
-          // export namespace
-          reexportedSymbols.add(exportSymbol);
+        }
+        // namespace reexport
+        // (but only if we actually have namespace-exporting outgoing dependencies,
+        // This usually happens with a reexporting asset with many namespace exports which means that
+        // we cannot match up the correct asset with the used symbol at this level.)
+        else if (hasNamespaceOutgoingDeps) {
+          namespaceReexportedSymbols.add(exportSymbol);
         }
       }
     }
 
-    for (let dep of outgoingDeps) {
-      if (dep.value.symbols.get('*')?.local === '*') {
-        for (let s of reexportedSymbols) {
-          // we need the reexportedSymbols to all namespace dependencies (= even wrong ones)
-          dep.usedSymbols.add(s);
-        }
-      } else {
-        for (let [symbol, {local}] of dep.value.symbols) {
-          if (!assetSymbolsInverse || !dep.value.weakSymbols.has(symbol)) {
-            dep.usedSymbols.add(symbol);
-          } else {
-            let reexport = assetSymbolsInverse.get(local);
-            if (
-              reexport == null ||
-              assetUsedSymbols.has('*') ||
-              assetUsedSymbols.has(reexport)
-            ) {
-              if (reexport != null) assetUsedSymbols.delete(reexport);
+    // console.log(assetNode.value.filePath, {
+    //   assetUsedSymbols,
+    //   namespaceReexportedSymbols,
+    //   isEntry,
+    // });
+
+    if (
+      // For entries, we still need to add dep.value.symbols of the entry (which "used" but not by according to symbols data)
+      isEntry ||
+      // If not a single asset is used, we can say the entires subgraph is not used.
+      // This is e.g. needed when some symbol is imported and then used for a export which isn't used (= "semi-weak" reexport)
+      //    index.js:     `import {bar} from "./lib"; ...`
+      //    lib/index.js: `export * from "./foo.js"; export * from "./bar.js";`
+      //    lib/foo.js:   `import { data } from "./bar.js"; export const foo = data + " esm2";`
+      // TODO is this really valid?
+      assetUsedSymbols.size > 0 ||
+      namespaceReexportedSymbols.size > 0
+    ) {
+      for (let dep of outgoingDeps) {
+        if (dep.value.symbols.get('*')?.local === '*') {
+          for (let s of namespaceReexportedSymbols) {
+            // We need to propagate the namespaceReexportedSymbols to all namespace dependencies (= even wrong ones because we don't know yet)
+            dep.usedSymbols.add(s);
+          }
+        } else {
+          for (let [symbol, {local}] of dep.value.symbols) {
+            if (!assetSymbolsInverse || !dep.value.weakSymbols.has(symbol)) {
+              // Bailout or non-weak symbol (= used in the asset itself = not a reexport)
               dep.usedSymbols.add(symbol);
+            } else {
+              let reexportedExportSymbol = assetSymbolsInverse.get(local);
+              if (
+                reexportedExportSymbol == null || // not reexported = used in asset itself
+                assetUsedSymbols.has('*') || // we need everything
+                assetUsedSymbols.has(reexportedExportSymbol) // reexported
+              ) {
+                if (reexportedExportSymbol != null) {
+                  // The symbol is indeed a reexport, so it's not used from the assset itself
+                  assetUsedSymbols.delete(reexportedExportSymbol);
+                }
+                dep.usedSymbols.add(symbol);
+              }
             }
           }
         }
