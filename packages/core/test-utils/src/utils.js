@@ -121,6 +121,39 @@ export function bundler(
   });
 }
 
+export function assertDependencyWasDeferred(
+  bundleGraph: BundleGraph<NamedBundle>,
+  assetFileName: string,
+  moduleSpecifier: string,
+) {
+  let dependency = bundleGraph.traverseBundles((bundle, context, actions) => {
+    let dep = bundle.traverseAssets((asset, context, actions) => {
+      if (path.basename(asset.filePath) === assetFileName) {
+        let dep = bundleGraph
+          .getDependencies(asset)
+          .find(d => d.moduleSpecifier === moduleSpecifier);
+        if (dep) {
+          actions.stop();
+          return dep;
+        }
+      }
+    });
+    if (dep) {
+      actions.stop();
+      return dep;
+    }
+  });
+  invariant(
+    dependency != null,
+    `Couldn't find dependency ${assetFileName} -> ${moduleSpecifier}`,
+  );
+
+  invariant(
+    bundleGraph.isDependencyDeferred(dependency),
+    `The dependency wasn't deferred`,
+  );
+}
+
 export async function bundle(
   entries: FilePath | Array<FilePath>,
   opts?: InitialParcelOptions,
