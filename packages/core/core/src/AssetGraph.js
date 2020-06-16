@@ -254,9 +254,7 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     });
   }
 
-  // Defer transforming this dependency if it is marked as weak, there are no side effects,
-  // no re-exported symbols are used by ancestor dependencies and the re-exporting asset isn't
-  // using a wildcard and isn't an entry (in library mode).
+  // Defer transforming this dependency if no re-exported symbols are used by ancestor dependencies.
   // This helps with performance building large libraries like `lodash-es`, which re-exports
   // a huge number of functions since we can avoid even transforming the files that aren't used.
   shouldDeferDependency(
@@ -316,25 +314,25 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     );
 
     let isEntry = false;
-    // used symbols that are either exported by asset or reexported (symbol will be removed again lated)
+    // Used symbols that are either exported by asset or reexported (symbol will be removed again lated).
     let assetUsedSymbols = new Set<string>();
-    // symbols that have to be namespace reexported by asset
+    // Symbols that have to be namespace reexported by asset.
     let namespaceReexportedSymbols = new Set<string>();
     for (let incomingDep of incomingDeps) {
       if (incomingDep.value.isEntry) isEntry = true;
 
       for (let exportSymbol of incomingDep.usedSymbols) {
         if (exportSymbol === '*') {
-          // There is no point in continuing the loop here, everything is used anyway.
+          // There is no point in continuing with the loop here, everything is used anyway.
           assetUsedSymbols = new Set(['*']);
           namespaceReexportedSymbols = new Set(['*']);
           break;
         }
         if (!assetSymbols || assetSymbols.has(exportSymbol)) {
-          // own symbol or non-namespace reexport
+          // An own symbol or a non-namespace reexport
           assetUsedSymbols.add(exportSymbol);
         }
-        // namespace reexport
+        // A namespace reexport
         // (but only if we actually have namespace-exporting outgoing dependencies,
         // This usually happens with a reexporting asset with many namespace exports which means that
         // we cannot match up the correct asset with the used symbol at this level.)
@@ -343,12 +341,6 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
         }
       }
     }
-
-    // console.log(assetNode.value.filePath, {
-    //   assetUsedSymbols,
-    //   namespaceReexportedSymbols,
-    //   isEntry,
-    // });
 
     if (
       // For entries, we still need to add dep.value.symbols of the entry (which "used" but not by according to symbols data)
