@@ -841,8 +841,7 @@ describe('scope hoisting', function() {
       let output = await run(bundleEvent.bundleGraph);
       assert.deepEqual(output, [123]);
 
-      let assetC = findAsset(bundleEvent.bundleGraph, 'c.js');
-      assert(assetC);
+      let assetC = nullthrows(findAsset(bundleEvent.bundleGraph, 'c.js'));
       assert.deepStrictEqual(
         bundleEvent.bundleGraph.getUsedSymbolsAsset(assetC),
         new Set(),
@@ -859,8 +858,7 @@ describe('scope hoisting', function() {
       output = await run(bundleEvent.bundleGraph);
       assert.deepEqual(output, [123, 789]);
 
-      assetC = findAsset(bundleEvent.bundleGraph, 'c.js');
-      assert(assetC);
+      assetC = nullthrows(findAsset(bundleEvent.bundleGraph, 'c.js'));
       assert.deepStrictEqual(
         bundleEvent.bundleGraph.getUsedSymbolsAsset(assetC),
         new Set(['c']),
@@ -1292,6 +1290,90 @@ describe('scope hoisting', function() {
 
         assert.deepEqual(calls, ['message1']);
         assert.deepEqual(output, 'Message 1');
+      });
+
+      it('supports named and namespace exports of the same asset (named used)', async function() {
+        let b = await bundle(
+          path.join(
+            __dirname,
+            '/integration/scope-hoisting/es6/side-effects-re-exports-namespace-same/a.js',
+          ),
+        );
+
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'index.js'))),
+          new Set([]),
+        );
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'other.js'))),
+          new Set(['default']),
+        );
+
+        let calls = [];
+        let output = await run(b, {
+          sideEffect: caller => {
+            calls.push(caller);
+          },
+        });
+
+        assert.deepEqual(calls, ['other']);
+        assert.deepEqual(output, ['foo']);
+      });
+
+      it('supports named and namespace exports of the same asset (namespace used)', async function() {
+        let b = await bundle(
+          path.join(
+            __dirname,
+            '/integration/scope-hoisting/es6/side-effects-re-exports-namespace-same/b.js',
+          ),
+        );
+
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'index.js'))),
+          new Set([]),
+        );
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'other.js'))),
+          new Set(['bar']),
+        );
+
+        let calls = [];
+        let output = await run(b, {
+          sideEffect: caller => {
+            calls.push(caller);
+          },
+        });
+
+        assert.deepEqual(calls, ['other']);
+        assert.deepEqual(output, ['bar']);
+      });
+
+      it('supports named and namespace exports of the same asset (both used)', async function() {
+        let b = await bundle(
+          path.join(
+            __dirname,
+            '/integration/scope-hoisting/es6/side-effects-re-exports-namespace-same/c.js',
+          ),
+        );
+
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'index.js'))),
+          new Set([]),
+        );
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'other.js'))),
+          new Set(['default', 'bar']),
+        );
+
+        let calls = [];
+        let output = await run(b, {
+          sideEffect: caller => {
+            calls.push(caller);
+          },
+        });
+
+        assert.deepEqual(calls, ['other']);
+        assert.deepEqual(output, ['foo', 'bar']);
       });
 
       it('supports deferring non-weak dependencies that are not used', async function() {

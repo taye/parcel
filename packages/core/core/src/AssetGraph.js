@@ -351,24 +351,27 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
             // We need to propagate the namespaceReexportedSymbols to all namespace dependencies (= even wrong ones because we don't know yet)
             outgoingDepAddSymbol(dep, s);
           }
-        } else {
-          for (let [symbol, {local}] of dep.value.symbols) {
-            if (!assetSymbolsInverse || !dep.value.weakSymbols.has(symbol)) {
-              // Bailout or non-weak symbol (= used in the asset itself = not a reexport)
-              outgoingDepAddSymbol(dep, symbol);
-            } else {
-              let reexportedExportSymbol = assetSymbolsInverse.get(local);
-              if (
-                reexportedExportSymbol == null || // not reexported = used in asset itself
-                assetUsedSymbols.has('*') || // we need everything
-                assetUsedSymbols.has(reexportedExportSymbol) // reexported
-              ) {
-                if (reexportedExportSymbol != null) {
-                  // The symbol is indeed a reexport, so it's not used from the assset itself
-                  assetUsedSymbols.delete(reexportedExportSymbol);
-                }
-                outgoingDepAddSymbol(dep, symbol);
+        }
+
+        for (let [symbol, {local}] of dep.value.symbols) {
+          // Was already handled above
+          if (local === '*') continue;
+
+          if (!assetSymbolsInverse || !dep.value.weakSymbols.has(symbol)) {
+            // Bailout or non-weak symbol (= used in the asset itself = not a reexport)
+            outgoingDepAddSymbol(dep, symbol);
+          } else {
+            let reexportedExportSymbol = assetSymbolsInverse.get(local);
+            if (
+              reexportedExportSymbol == null || // not reexported = used in asset itself
+              assetUsedSymbols.has('*') || // we need everything
+              assetUsedSymbols.has(reexportedExportSymbol) // reexported
+            ) {
+              if (reexportedExportSymbol != null) {
+                // The symbol is indeed a reexport, so it's not used from the assset itself
+                assetUsedSymbols.delete(reexportedExportSymbol);
               }
+              outgoingDepAddSymbol(dep, symbol);
             }
           }
         }
