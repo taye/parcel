@@ -51,7 +51,7 @@ export default async function dumpGraphToGraphViz(
       if (node.value.isEntry) parts.push('entry');
       if (node.value.isAsync) parts.push('async');
       if (node.value.isOptional) parts.push('optional');
-      if (node.hasDeferred) parts.push('deferred');
+      if (node.deferred) parts.push('deferred');
       if (parts.length) label += ' (' + parts.join(', ') + ')';
       if (node.value.env) label += ` (${getEnvDescription(node.value.env)})`;
       if (node.value.symbols.size) {
@@ -65,6 +65,7 @@ export default async function dumpGraphToGraphViz(
       if (node.usedSymbols.size) {
         label += '\nusedSymbols: ' + [...node.usedSymbols].join(',');
       }
+      if (node.usedSymbolsDirty) parts.push('\nusedSymbolsDirty');
     } else if (node.type === 'asset') {
       label += path.basename(node.value.filePath) + '#' + node.value.type;
       if (node.value.symbols && node.value.symbols.size) {
@@ -75,8 +76,6 @@ export default async function dumpGraphToGraphViz(
       if (node.usedSymbols.size) {
         label += '\nusedSymbols: ' + [...node.usedSymbols].join(',');
       }
-    } else if (node.type === 'asset_group') {
-      if (node.deferred) label += '(deferred)' + '\n';
     } else if (node.type === 'file') {
       label += path.basename(node.value.filePath);
     } else if (node.type === 'transformer_request') {

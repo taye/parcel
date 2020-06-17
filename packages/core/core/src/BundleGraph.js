@@ -110,7 +110,7 @@ export default class BundleGraph {
   isDependencyDeferred(dependency: Dependency): boolean {
     let node = this._graph.getNode(dependency.id);
     invariant(node && node.type === 'dependency');
-    return !!node.hasDeferred;
+    return node.deferred;
   }
 
   getParentBundlesOfBundleGroup(bundleGroup: BundleGroup): Array<Bundle> {

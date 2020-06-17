@@ -41,7 +41,9 @@ export function nodeFromDep(dep: Dependency): DependencyNode {
     id: dep.id,
     type: 'dependency',
     value: dep,
+    deferred: false,
     usedSymbols: new Set(),
+    usedSymbolsDirty: false,
   };
 }
 
@@ -59,6 +61,7 @@ export function nodeFromAsset(asset: Asset): AssetNode {
     type: 'asset',
     value: asset,
     usedSymbols: new Set(),
+    usedSymbolsDirty: false,
   };
 }
 
@@ -192,66 +195,43 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     }
 
     this.replaceNodesConnectedTo(depNode, [nodeFromAssetGroup(assetGroup)]);
-    // TODO update assetGroup.children[*].usedSymbols
   }
 
-  shouldVisitChild(node: AssetGraphNode, childNode: AssetGraphNode) {
+  shouldVisitChild(
+    parent: ?AssetGraphNode,
+    node: AssetGraphNode,
+    child: AssetGraphNode,
+    wasVisited: boolean,
+  ): ?boolean {
+    if (child.type === 'dependency' && child.usedSymbolsDirty) return true;
+
+    if (node.type === 'dependency' && child.type === 'asset_group') {
+      let dependency = node;
+      let sideEffects = child.value.sideEffects;
+      let defer = this.shouldDeferDependency(dependency, sideEffects);
+      dependency.deferred = defer;
+      return !defer;
+    }
+
     if (
-      node.type !== 'dependency' ||
-      childNode.type !== 'asset_group' ||
-      childNode.deferred === false
+      parent &&
+      parent.type === 'dependency' &&
+      parent.usedSymbolsDirty &&
+      node.type === 'asset_group' &&
+      child.type === 'asset'
     ) {
-      return true;
+      parent.usedSymbolsDirty = false;
+      let outgoingDepsChanged = this.setUsedSymbolsAsset(
+        child,
+        this.getNodesConnectedFrom(child).map(dep => {
+          invariant(dep.type === 'dependency');
+          return dep;
+        }),
+      );
+      return outgoingDepsChanged || !wasVisited;
     }
 
-    let sideEffects = childNode.value.sideEffects;
-    let dependency = node;
-    let previouslyDeferred = childNode.deferred;
-    let defer = this.shouldDeferDependency(dependency, sideEffects);
-    node.hasDeferred = defer;
-    childNode.deferred = defer;
-
-    if (!previouslyDeferred && defer) {
-      this.markParentsWithHasDeferred(node);
-    } else if (previouslyDeferred && !defer) {
-      this.unmarkParentsWithHasDeferred(node);
-    }
-
-    return !defer;
-  }
-
-  markParentsWithHasDeferred(node: DependencyNode) {
-    this.traverseAncestors(node, (_node, _, actions) => {
-      if (_node.type === 'asset') {
-        _node.hasDeferred = true;
-      } else if (_node.type === 'asset_group') {
-        _node.hasDeferred = true;
-        actions.skipChildren();
-      } else if (node !== _node) {
-        actions.skipChildren();
-      }
-    });
-  }
-
-  unmarkParentsWithHasDeferred(node: DependencyNode) {
-    this.traverseAncestors(node, (_node, ctx, actions) => {
-      if (_node.type === 'asset') {
-        let hasDeferred = this.getNodesConnectedFrom(_node).some(_childNode =>
-          _childNode.hasDeferred == null ? false : _childNode.hasDeferred,
-        );
-        if (!hasDeferred) {
-          delete _node.hasDeferred;
-        }
-        return {hasDeferred};
-      } else if (_node.type === 'asset_group') {
-        if (!ctx?.hasDeferred) {
-          delete _node.hasDeferred;
-        }
-        actions.skipChildren();
-      } else if (node !== _node) {
-        actions.skipChildren();
-      }
-    });
+    return !wasVisited;
   }
 
   // Defer transforming this dependency if no re-exported symbols are used by ancestor dependencies.
@@ -261,39 +241,48 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     dependency: DependencyNode,
     sideEffects: ?boolean,
   ): boolean {
-    // return !!(sideEffects === false && dependency.usedSymbols.size == 0);
+    return !!(sideEffects === false && dependency.usedSymbols.size == 0);
 
     // TODO do we really want this?:
     // one module does `export * from './esm.js'`.
     // then esm.js has `import something from 'commonjs'`, esm.js doesn’t have any used symbols and isn’t included.
     // but commonjs was still getting included.
-    if (sideEffects !== false) return false;
-    if (dependency.usedSymbols.size === 0) return true;
-    let parentAsset =
-      dependency.value.sourceAssetId != null &&
-      this.getNode(dependency.value.sourceAssetId);
-    if (parentAsset) {
-      invariant(parentAsset.type === 'asset');
-      if (
-        parentAsset.value.symbols != null &&
-        parentAsset.value.symbols.size > 0 &&
-        parentAsset.usedSymbols.size === 0
-      ) {
-        return this.getIncomingDependencies(parentAsset.value).every(d => {
-          let n = this.getNode(d.id);
-          invariant(n && n.type === 'dependency');
-          return n.usedSymbols.size === 0;
-        });
-      }
-      return false;
-    }
-    return false;
+    // if (sideEffects !== false) return false;
+    // if (dependency.usedSymbols.size === 0) return true;
+    // let parentAsset =
+    //   dependency.value.sourceAssetId != null &&
+    //   this.getNode(dependency.value.sourceAssetId);
+    // if (parentAsset) {
+    //   invariant(parentAsset.type === 'asset');
+    //   if (
+    //     parentAsset.value.symbols != null &&
+    //     parentAsset.value.symbols.size > 0 &&
+    //     parentAsset.usedSymbols.size === 0
+    //   ) {
+    //     return this.getIncomingDependencies(parentAsset.value).every(d => {
+    //       let n = this.getNode(d.id);
+    //       invariant(n && n.type === 'dependency');
+    //       return n.usedSymbols.size === 0;
+    //     });
+    //   }
+    //   return false;
+    // }
+    // return false;
   }
 
   setUsedSymbolsAsset(
     assetNode: AssetNode,
     outgoingDeps: $ReadOnlyArray<DependencyNode>,
   ) {
+    let hasDirtyOutgoingDep = false;
+    function outgoingDepAddSymbol(dep, symbol) {
+      if (!dep.usedSymbols.has(symbol)) {
+        dep.usedSymbols.add(symbol);
+        dep.usedSymbolsDirty = true;
+        hasDirtyOutgoingDep = true;
+      }
+    }
+
     let incomingDeps = this.getIncomingDependencies(assetNode.value).map(d => {
       let n = this.getNode(d.id);
       invariant(n && n.type === 'dependency');
@@ -358,13 +347,13 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
         if (dep.value.symbols.get('*')?.local === '*') {
           for (let s of namespaceReexportedSymbols) {
             // We need to propagate the namespaceReexportedSymbols to all namespace dependencies (= even wrong ones because we don't know yet)
-            dep.usedSymbols.add(s);
+            outgoingDepAddSymbol(dep, s);
           }
         } else {
           for (let [symbol, {local}] of dep.value.symbols) {
             if (!assetSymbolsInverse || !dep.value.weakSymbols.has(symbol)) {
               // Bailout or non-weak symbol (= used in the asset itself = not a reexport)
-              dep.usedSymbols.add(symbol);
+              outgoingDepAddSymbol(dep, symbol);
             } else {
               let reexportedExportSymbol = assetSymbolsInverse.get(local);
               if (
@@ -376,7 +365,7 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
                   // The symbol is indeed a reexport, so it's not used from the assset itself
                   assetUsedSymbols.delete(reexportedExportSymbol);
                 }
-                dep.usedSymbols.add(symbol);
+                outgoingDepAddSymbol(dep, symbol);
               }
             }
           }
@@ -384,6 +373,8 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
       }
     }
     assetNode.usedSymbols = assetUsedSymbols;
+
+    return hasDirtyOutgoingDep;
   }
 
   resolveAssetGroup(
@@ -418,8 +409,13 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
           dependentAssets.push(dependentAsset);
         }
       }
+
+      // TODO ???
+      let assetNode = this.getNode(asset.id) ?? nodeFromAsset(asset);
+      invariant(assetNode.type === 'asset');
+      assetNode.value = asset;
       assetObjects.push({
-        assetNode: nodeFromAsset(asset),
+        assetNode,
         dependentAssets,
         isDirect,
       });
@@ -438,7 +434,11 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     let depNodes: Array<DependencyNode> = [];
     let depNodesWithAssets = [];
     for (let dep of assetNode.value.dependencies.values()) {
-      let depNode = nodeFromDep(dep);
+      // TODO ???
+      let depNode = this.getNode(dep.id) ?? nodeFromDep(dep);
+      invariant(depNode.type === 'dependency');
+      depNode.value = dep;
+
       let dependentAsset = dependentAssets.find(
         a => a.uniqueKey === dep.moduleSpecifier,
       );
