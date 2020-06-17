@@ -286,6 +286,7 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     let incomingDeps = this.getIncomingDependencies(assetNode.value).map(d => {
       let n = this.getNode(d.id);
       invariant(n && n.type === 'dependency');
+      n.usedSymbolsDirty = false;
       return n;
     });
 
@@ -308,7 +309,8 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
     // Symbols that have to be namespace reexported by asset.
     let namespaceReexportedSymbols = new Set<string>();
     for (let incomingDep of incomingDeps) {
-      if (incomingDep.value.isEntry) isEntry = true;
+      if (incomingDep.value.isEntry || incomingDep.value.isAsync)
+        isEntry = true;
 
       for (let exportSymbol of incomingDep.usedSymbols) {
         if (exportSymbol === '*') {

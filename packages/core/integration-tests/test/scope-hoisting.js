@@ -1,5 +1,6 @@
 import assert from 'assert';
 import path from 'path';
+import nullthrows from 'nullthrows';
 import {
   assertBundles,
   assertDependencyWasDeferred,
@@ -2393,15 +2394,18 @@ describe('scope hoisting', function() {
       },
       {
         type: 'js',
-        assets: ['index.js'],
+        assets: ['index.js', 'other.js'],
       },
     ]);
 
-    let value = null;
+    let asset = nullthrows(findAsset(b, 'other.js'));
+    assert.deepStrictEqual(b.getUsedSymbolsAsset(asset), new Set(['default']));
+
+    let value = [];
     await run(b, {
-      alert: v => (value = v),
+      alert: v => value.push(v),
     });
-    assert.equal(value, 'Hi');
+    assert.deepEqual(value, ['other']);
   });
 
   it('should not throw with JS dynamic imports included from HTML', async function() {
