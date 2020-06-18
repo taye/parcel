@@ -877,6 +877,51 @@ export default class BundleGraph {
     return symbols;
   }
 
+  // getExportedSymbols(asset: Asset) {
+  //   let assetSymbols = asset.symbols;
+  //   if (!assetSymbols) {
+  //     return [];
+  //   }
+  //   let assetSymbolsInverse = new Map(
+  //     [...assetSymbols].map(([key, val]) => [val.local, key]),
+  //   );
+
+  //   let symbols = [];
+
+  //   for (let symbol of this.getUsedSymbolsAsset(asset)) {
+  //     symbols.push({
+  //       ...this.resolveSymbol(asset, symbol),
+  //       exportAs: symbol,
+  //     });
+  //   }
+
+  //   let deps = this.getDependencies(asset);
+  //   for (let dep of deps) {
+  //     let resolved = this.getDependencyResolution(dep);
+  //     if (!resolved) continue;
+
+  //     for (let symbol of this.getUsedSymbolsDependency(dep)) {
+  //       if (symbol === '*' && dep.symbols.get('*')?.local === '*') {
+  //         symbols.push(...this.getExportedSymbols(resolved));
+  //       } else if (assetSymbolsInverse.has(dep.symbols.get(symbol))) {
+  //         let resolvedSymbol = this.resolveSymbol(resolved, symbol);
+  //         console.log({
+  //           asset: asset.filePath,
+  //           dep: dep.moduleSpecifier,
+  //           exportSymbol: resolvedSymbol.exportSymbol,
+  //           assetSymbolsInverse,
+  //         });
+  //         symbols.push({
+  //           ...resolvedSymbol,
+  //           exportAs: assetSymbolsInverse.get(dep.symbols.get(symbol)),
+  //         });
+  //       }
+  //     }
+  //   }
+
+  //   return symbols;
+  // }
+
   getContentHash(bundle: Bundle): string {
     let existingHash = this._bundleContentHashes.get(bundle.id);
     if (existingHash != null) {

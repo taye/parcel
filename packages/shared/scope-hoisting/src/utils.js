@@ -15,6 +15,7 @@ import type {
   ImportNamespaceSpecifier,
   ImportSpecifier,
   Node,
+  Program,
   VariableDeclarator,
 } from '@babel/types';
 import type {Diagnostic} from '@parcel/diagnostic';
@@ -316,4 +317,24 @@ export function convertBabelLoc(loc: ?BabelSourceLocation): ?SourceLocation {
       column: end.column,
     },
   };
+}
+
+export function getExportNamespaceExpression(
+  program: NodePath<Program>,
+  bundleGraph: BundleGraph<NamedBundle>,
+  asset: Asset,
+) {
+  if (bundleGraph.getUsedSymbolsAsset(asset).has('*')) {
+    return t.identifier(assertString(asset.meta.exportsIdentifier));
+  } else {
+    return t.objectExpression(
+      bundleGraph.getExportedSymbols(asset).map(v => {
+        invariant(program.scope.hasBinding(nullthrows(v.symbol)));
+        return t.objectProperty(
+          t.identifier(v.exportAs),
+          t.identifier(nullthrows(v.symbol)),
+        );
+      }),
+    );
+  }
 }

@@ -43,6 +43,7 @@ import {
   convertBabelLoc,
   getName,
   getIdentifier,
+  getExportNamespaceExpression,
   getThrowableDiagnosticForNode,
   verifyScopeState,
 } from './utils';
@@ -67,7 +68,7 @@ const REQUIRE_RESOLVE_CALL_TEMPLATE = template.expression<
   Expression,
 >('require.resolve(ID)');
 const FAKE_INIT_TEMPLATE = template.statement<
-  {|INIT: Identifier, EXPORTS: Identifier|},
+  {|INIT: Identifier, EXPORTS: Expression|},
   FunctionDeclaration,
 >(`function INIT(){
   return EXPORTS;
@@ -695,7 +696,7 @@ export function link({
               .map(a => {
                 return FAKE_INIT_TEMPLATE({
                   INIT: getIdentifier(a, 'init'),
-                  EXPORTS: t.identifier(assertString(a.meta.exportsIdentifier)),
+                  EXPORTS: getExportNamespaceExpression(path, bundleGraph, a),
                 });
               }),
           );
