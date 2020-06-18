@@ -1439,6 +1439,11 @@ describe('scope hoisting', function() {
           ),
         );
 
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'esm.js'))),
+          new Set(['message1']),
+        );
+
         let calls = [];
         let output = await run(b, {
           sideEffect: caller => {
@@ -1446,7 +1451,7 @@ describe('scope hoisting', function() {
           },
         });
 
-        assert.deepEqual(calls, ['esm']);
+        assert.deepEqual(calls, ['esm', 'commonjs']);
         assert.deepEqual(output, 'Message 1');
       });
 
@@ -1456,6 +1461,15 @@ describe('scope hoisting', function() {
             __dirname,
             '/integration/scope-hoisting/es6/side-effects-commonjs/b.js',
           ),
+        );
+
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'esm.js'))),
+          new Set([]),
+        );
+        assert.deepStrictEqual(
+          b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'commonjs.js'))),
+          new Set(['message1']),
         );
 
         let calls = [];
