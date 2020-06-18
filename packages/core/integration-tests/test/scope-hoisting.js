@@ -466,6 +466,40 @@ describe('scope hoisting', function() {
       assert(threw);
     });
 
+    it('supports importing named CommonJS (export individual)', async function() {
+      let b = await bundle(
+        path.join(
+          __dirname,
+          '/integration/scope-hoisting/es6/import-commonjs-export-individual/a.js',
+        ),
+      );
+
+      assert.deepStrictEqual(
+        b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'c.js'))),
+        new Set(['name', 'version']),
+      );
+
+      let output = await run(b);
+      assert.deepEqual(output, 'name:1.2.3');
+    });
+
+    it('supports importing named CommonJS (export namespace)', async function() {
+      let b = await bundle(
+        path.join(
+          __dirname,
+          '/integration/scope-hoisting/es6/import-commonjs-export-object/a.js',
+        ),
+      );
+
+      assert.deepStrictEqual(
+        b.getUsedSymbolsAsset(nullthrows(findAsset(b, 'c.js'))),
+        new Set(['name', 'version']),
+      );
+
+      let output = await run(b);
+      assert.deepEqual(output, 'name:1.2.3');
+    });
+
     it('supports import default CommonJS interop', async function() {
       let b = await bundle(
         path.join(

@@ -319,7 +319,11 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
           namespaceReexportedSymbols = new Set(['*']);
           break;
         }
-        if (!assetSymbols || assetSymbols.has(exportSymbol)) {
+        if (
+          !assetSymbols ||
+          assetSymbols.has(exportSymbol) ||
+          assetSymbols.has('*')
+        ) {
           // An own symbol or a non-namespace reexport
           assetUsedSymbols.add(exportSymbol);
         }
