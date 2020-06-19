@@ -138,7 +138,8 @@ export function generateExports(
       symbol,
       asset,
       loc,
-    } of bundleGraph.getExportedSymbols(entry)) {
+    } of bundleGraph.getExportedSymbols(entry, bundle)) {
+      // console.log(entry.filePath, symbol, exportSymbol);
       if (symbol != null) {
         symbol = replacements.get(symbol) || symbol;
 
@@ -176,6 +177,7 @@ export function generateExports(
       }
     }
   }
+  console.log(entry?.filePath, exportedIdentifiers);
 
   for (let asset of referencedAssets) {
     let exportsId = getName(asset, 'init');
@@ -322,8 +324,19 @@ export function generateExports(
           }
         }
       }
+      exportedSymbols.forEach(s => exportedIdentifiers.delete(s));
     },
   });
+
+  programPath.pushContainer(
+    'body',
+    t.exportNamedDeclaration(
+      null,
+      [...exportedIdentifiers.entries()].map(([exportSymbol, symbol]) =>
+        t.exportSpecifier(t.identifier(symbol), t.identifier(exportSymbol)),
+      ),
+    ),
+  );
 
   return exported;
 }

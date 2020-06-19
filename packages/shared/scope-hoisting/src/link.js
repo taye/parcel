@@ -183,6 +183,8 @@ export function link({
       path.node.name = replacement;
     }
 
+    console.log(path.node.name, name, imports.has(name));
+
     if (imports.has(name)) {
       let node;
       let imported = imports.get(name);
@@ -722,6 +724,7 @@ export function link({
           replacements,
           options,
         );
+        console.log('generateExports');
 
         if (process.env.PARCEL_BUILD_ENV !== 'production') {
           verifyScopeState(path.scope);

@@ -706,7 +706,10 @@ export interface BundleGraph<TBundle: Bundle> {
     symbol: Symbol,
     boundary: ?Bundle,
   ): SymbolResolution;
-  getExportedSymbols(asset: Asset): Array<ExportSymbolResolution>;
+  getExportedSymbols(
+    asset: Asset,
+    boundary: ?Bundle,
+  ): Array<ExportSymbolResolution>;
   traverseBundles<TContext>(
     visit: GraphVisitor<TBundle, TContext>,
     startBundle: ?Bundle,

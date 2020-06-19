@@ -229,8 +229,14 @@ export default class BundleGraph<TBundle: IBundle>
     };
   }
 
-  getExportedSymbols(asset: IAsset): Array<ExportSymbolResolution> {
-    let res = this.#graph.getExportedSymbols(assetToAssetValue(asset));
+  getExportedSymbols(
+    asset: IAsset,
+    boundary: ?IBundle,
+  ): Array<ExportSymbolResolution> {
+    let res = this.#graph.getExportedSymbols(
+      assetToAssetValue(asset),
+      boundary ? bundleToInternalBundle(boundary) : null,
+    );
     return res.map(e => ({
       asset: assetFromValue(e.asset, this.#options),
       exportSymbol: e.exportSymbol,

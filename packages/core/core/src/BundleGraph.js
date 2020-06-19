@@ -851,26 +851,55 @@ export default class BundleGraph {
     }
   }
 
-  getExportedSymbols(asset: Asset) {
-    if (!asset.symbols) {
+  getExportedSymbols(asset: Asset, boundary: ?Bundle) {
+    let assetSymbols = asset.symbols;
+    if (!assetSymbols) {
       return [];
     }
 
+    let assetSymbolsInverse = new Map(
+      [...assetSymbols].map(([key, val]) => [val.local, key]),
+    );
+
     let symbols = [];
 
-    for (let symbol of asset.symbols.keys()) {
-      symbols.push({...this.resolveSymbol(asset, symbol), exportAs: symbol});
+    let assetExportAll = this.getUsedSymbolsAsset(asset).has('*');
+    for (let symbol of assetSymbols.keys()) {
+      if (this.getUsedSymbolsAsset(asset).has(symbol)) {
+        symbols.push({
+          ...this.resolveSymbol(asset, symbol, boundary),
+          exportAs: symbol,
+        });
+      }
     }
+
+    let X = asset.filePath.endsWith('a.js');
 
     let deps = this.getDependencies(asset);
     for (let dep of deps) {
-      if (dep.symbols.get('*')?.local === '*') {
-        let resolved = this.getDependencyResolution(dep);
-        if (!resolved) continue;
-        let exported = this.getExportedSymbols(resolved)
-          .filter(s => s.exportSymbol !== 'default')
-          .map(s => ({...s, exportAs: s.exportSymbol}));
-        symbols.push(...exported);
+      let resolved = this.getDependencyResolution(dep);
+      if (!resolved) continue;
+
+      // if (X) console.log(dep.moduleSpecifier);
+
+      for (let symbol of this.getUsedSymbolsDependency(dep)) {
+        let local = dep.symbols.get(symbol)?.local;
+        if (symbol === '*' && local === '*') {
+          let exported = this.getExportedSymbols(resolved, boundary)
+            .filter(s => s.exportSymbol !== 'default')
+            .map(s => ({...s, exportAs: s.exportSymbol}));
+          symbols.push(...exported);
+        } else {
+          let exportAs = assetSymbolsInverse.get(local);
+          if (exportAs != null || assetExportAll) {
+            let s = this.resolveSymbol(resolved, symbol, boundary);
+            if (X) console.log(resolved.filePath, symbol, s);
+            symbols.push({
+              ...s,
+              exportAs: exportAs ?? s.exportSymbol,
+            });
+          }
+        }
       }
     }
 

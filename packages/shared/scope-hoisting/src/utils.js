@@ -323,13 +323,18 @@ export function getExportNamespaceExpression(
   program: NodePath<Program>,
   bundleGraph: BundleGraph<NamedBundle>,
   asset: Asset,
+  bundle?: NamedBundle,
 ) {
   if (bundleGraph.getUsedSymbolsAsset(asset).has('*')) {
     return t.identifier(assertString(asset.meta.exportsIdentifier));
   } else {
     return t.objectExpression(
-      bundleGraph.getExportedSymbols(asset).map(v => {
-        invariant(program.scope.hasBinding(nullthrows(v.symbol)));
+      bundleGraph.getExportedSymbols(asset, bundle).map(v => {
+        // console.log(asset.filePath, v.symbol, v.exportAs);
+        invariant(
+          program.scope.hasBinding(nullthrows(v.symbol)),
+          asset.filePath + ' - ' + v.symbol,
+        );
         return t.objectProperty(
           t.identifier(v.exportAs),
           t.identifier(nullthrows(v.symbol)),
