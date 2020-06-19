@@ -866,9 +866,9 @@ export default class BundleGraph {
 
     let symbols = [];
 
-    let assetExportAll = assetSymbolsUsed.has('*');
+    let assetUsedAll = assetSymbolsUsed.has('*');
     for (let symbol of assetSymbols.keys()) {
-      if (assetExportAll || assetSymbolsUsed.has(symbol)) {
+      if (assetUsedAll || assetSymbolsUsed.has(symbol)) {
         // symbols.push({
         //   ...this.resolveSymbol(asset, symbol, boundary),
         //   exportAs: symbol,
@@ -896,7 +896,7 @@ export default class BundleGraph {
           symbols.push(...exported);
         } else {
           let exportAs = assetSymbolsInverse.get(local);
-          if (exportAs != null || assetExportAll) {
+          if (exportAs != null) {
             symbols.push({
               asset: resolved,
               exportSymbol: symbol,
