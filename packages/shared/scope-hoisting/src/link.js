@@ -96,6 +96,8 @@ export function link({
   let importedFiles = new Map<string, ExternalModule | ExternalBundle>();
   let referencedAssets = new Set();
 
+  // return {ast, referencedAssets}
+
   // If building a library, the target is actually another bundler rather
   // than the final output that could be loaded in a browser. So, loader
   // runtimes are excluded, and instead we add imports into the entry bundle
@@ -182,8 +184,6 @@ export function link({
     if (replacement) {
       path.node.name = replacement;
     }
-
-    console.log(path.node.name, name, imports.has(name));
 
     if (imports.has(name)) {
       let node;
@@ -622,8 +622,18 @@ export function link({
         }
 
         let asset = exportsMap.get(object.name);
+        // console.log({
+        //   bundle: bundle.filePath,
+        //   path: path.node,
+        //   asset: asset?.filePath,
+        //   a: assets.has(asset?.meta?.id),
+        //   b: asset && bundle.hasAsset(asset),
+        // });
         if (!asset) {
           return;
+        }
+        if (bundle.filePath.endsWith('c.7a957ac7.js')) {
+          console.log(path.node);
         }
 
         // If it's a $id$exports.name expression.
@@ -724,13 +734,13 @@ export function link({
           replacements,
           options,
         );
-        console.log('generateExports');
 
         if (process.env.PARCEL_BUILD_ENV !== 'production') {
           verifyScopeState(path.scope);
         }
 
-        treeShake(path.scope, exported, exportsMap);
+        // treeShake(path.scope, exported, exportsMap);
+        // path.stop();
       },
     },
   });

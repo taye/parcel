@@ -845,7 +845,9 @@ export default class BundleGraph {
       return {
         asset,
         exportSymbol: symbol,
-        symbol: identifier ?? (bailout ? null : undefined),
+        symbol: assetOutside
+          ? null
+          : identifier ?? (bailout ? null : undefined),
         loc: asset.symbols?.get(symbol)?.loc,
       };
     }
@@ -860,29 +862,32 @@ export default class BundleGraph {
     let assetSymbolsInverse = new Map(
       [...assetSymbols].map(([key, val]) => [val.local, key]),
     );
+    let assetSymbolsUsed = this.getUsedSymbolsAsset(asset);
 
     let symbols = [];
 
-    let assetExportAll = this.getUsedSymbolsAsset(asset).has('*');
+    let assetExportAll = assetSymbolsUsed.has('*');
     for (let symbol of assetSymbols.keys()) {
-      if (this.getUsedSymbolsAsset(asset).has(symbol)) {
+      if (assetExportAll || assetSymbolsUsed.has(symbol)) {
+        // symbols.push({
+        //   ...this.resolveSymbol(asset, symbol, boundary),
+        //   exportAs: symbol,
+        // });
         symbols.push({
-          ...this.resolveSymbol(asset, symbol, boundary),
+          asset,
+          exportSymbol: symbol,
+          symbol: nullthrows(assetSymbols.get(symbol)).local,
+          loc: nullthrows(assetSymbols.get(symbol)).loc,
           exportAs: symbol,
         });
       }
     }
 
-    let X = asset.filePath.endsWith('a.js');
-
     let deps = this.getDependencies(asset);
     for (let dep of deps) {
-      let resolved = this.getDependencyResolution(dep);
-      if (!resolved) continue;
-
-      // if (X) console.log(dep.moduleSpecifier);
-
       for (let symbol of this.getUsedSymbolsDependency(dep)) {
+        let resolved = this.getDependencyResolution(dep);
+        if (!resolved) continue;
         let local = dep.symbols.get(symbol)?.local;
         if (symbol === '*' && local === '*') {
           let exported = this.getExportedSymbols(resolved, boundary)
@@ -892,11 +897,12 @@ export default class BundleGraph {
         } else {
           let exportAs = assetSymbolsInverse.get(local);
           if (exportAs != null || assetExportAll) {
-            let s = this.resolveSymbol(resolved, symbol, boundary);
-            if (X) console.log(resolved.filePath, symbol, s);
             symbols.push({
-              ...s,
-              exportAs: exportAs ?? s.exportSymbol,
+              asset: resolved,
+              exportSymbol: symbol,
+              symbol: dep.symbols.get(symbol)?.local,
+              loc: dep.symbols.get(symbol)?.loc,
+              exportAs: exportAs ?? symbol,
             });
           }
         }
@@ -905,51 +911,6 @@ export default class BundleGraph {
 
     return symbols;
   }
-
-  // getExportedSymbols(asset: Asset) {
-  //   let assetSymbols = asset.symbols;
-  //   if (!assetSymbols) {
-  //     return [];
-  //   }
-  //   let assetSymbolsInverse = new Map(
-  //     [...assetSymbols].map(([key, val]) => [val.local, key]),
-  //   );
-
-  //   let symbols = [];
-
-  //   for (let symbol of this.getUsedSymbolsAsset(asset)) {
-  //     symbols.push({
-  //       ...this.resolveSymbol(asset, symbol),
-  //       exportAs: symbol,
-  //     });
-  //   }
-
-  //   let deps = this.getDependencies(asset);
-  //   for (let dep of deps) {
-  //     let resolved = this.getDependencyResolution(dep);
-  //     if (!resolved) continue;
-
-  //     for (let symbol of this.getUsedSymbolsDependency(dep)) {
-  //       if (symbol === '*' && dep.symbols.get('*')?.local === '*') {
-  //         symbols.push(...this.getExportedSymbols(resolved));
-  //       } else if (assetSymbolsInverse.has(dep.symbols.get(symbol))) {
-  //         let resolvedSymbol = this.resolveSymbol(resolved, symbol);
-  //         console.log({
-  //           asset: asset.filePath,
-  //           dep: dep.moduleSpecifier,
-  //           exportSymbol: resolvedSymbol.exportSymbol,
-  //           assetSymbolsInverse,
-  //         });
-  //         symbols.push({
-  //           ...resolvedSymbol,
-  //           exportAs: assetSymbolsInverse.get(dep.symbols.get(symbol)),
-  //         });
-  //       }
-  //     }
-  //   }
-
-  //   return symbols;
-  // }
 
   getContentHash(bundle: Bundle): string {
     let existingHash = this._bundleContentHashes.get(bundle.id);

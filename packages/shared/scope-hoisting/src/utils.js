@@ -330,11 +330,10 @@ export function getExportNamespaceExpression(
   } else {
     return t.objectExpression(
       bundleGraph.getExportedSymbols(asset, bundle).map(v => {
-        // console.log(asset.filePath, v.symbol, v.exportAs);
-        invariant(
-          program.scope.hasBinding(nullthrows(v.symbol)),
-          asset.filePath + ' - ' + v.symbol,
-        );
+        // invariant(
+        //   program.scope.hasBinding(nullthrows(v.symbol)),
+        //   asset.filePath + ' - ' + v.symbol,
+        // );
         return t.objectProperty(
           t.identifier(v.exportAs),
           t.identifier(nullthrows(v.symbol)),
