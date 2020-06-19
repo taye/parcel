@@ -622,25 +622,15 @@ export function link({
         }
 
         let asset = exportsMap.get(object.name);
-        // console.log({
-        //   bundle: bundle.filePath,
-        //   path: path.node,
-        //   asset: asset?.filePath,
-        //   a: assets.has(asset?.meta?.id),
-        //   b: asset && bundle.hasAsset(asset),
-        // });
         if (!asset) {
           return;
-        }
-        if (bundle.filePath.endsWith('c.7a957ac7.js')) {
-          console.log(path.node);
         }
 
         // If it's a $id$exports.name expression.
         let name = isIdentifier(property) ? property.name : property.value;
         let {identifier} = resolveSymbol(asset, name);
 
-        if (identifier == null) {
+        if (identifier == null || !path.scope.hasBinding(identifier)) {
           return;
         }
 
@@ -739,8 +729,7 @@ export function link({
           verifyScopeState(path.scope);
         }
 
-        // treeShake(path.scope, exported, exportsMap);
-        // path.stop();
+        treeShake(path.scope, exported, exportsMap);
       },
     },
   });

@@ -629,6 +629,21 @@ describe('output formats', function() {
       assert(async.includes('export const foo'));
     });
 
+    it('should support dynamic imports with chained reexports', async function() {
+      let b = await bundle(
+        path.join(
+          __dirname,
+          '/integration/formats/esm-async-chained-reexport/index.js',
+        ),
+      );
+
+      let async = await outputFS.readFile(
+        b.getBundles().find(b => b.name.startsWith('c')).filePath,
+        'utf8',
+      );
+      assert(!/\$export\$default\s+=/.test(async));
+    });
+
     it('should throw an error on missing export with esmodule output and sideEffects: false', async function() {
       let message = "b.js does not export 'a'";
       let source = 'missing-export.js';
