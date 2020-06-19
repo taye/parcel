@@ -337,6 +337,12 @@ export default class AssetGraph extends Graph<AssetGraphNode> {
       }
     }
 
+    if (incomingDeps.length === 0) {
+      // Root in the runtimes Graph
+      assetUsedSymbols = new Set(['*']);
+      namespaceReexportedSymbols = new Set(['*']);
+    }
+
     if (
       // For entries, we still need to add dep.value.symbols of the entry (which "used" but not by according to symbols data)
       isEntry ||

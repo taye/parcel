@@ -31,7 +31,6 @@ import {relative} from 'path';
 import {relativeBundlePath} from '@parcel/utils';
 import rename from '../renamer';
 import {
-  assertString,
   getName,
   getExportIdentifier,
   removeReplaceBinding,

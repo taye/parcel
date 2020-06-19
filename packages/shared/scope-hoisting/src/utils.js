@@ -325,8 +325,10 @@ export function getExportNamespaceExpression(
   asset: Asset,
   bundle?: NamedBundle,
 ) {
-  if (bundleGraph.getUsedSymbolsAsset(asset).has('*')) {
-    return t.identifier(assertString(asset.meta.exportsIdentifier));
+  let exportedSymbols = bundleGraph.getExportedSymbols(asset, bundle);
+  let namespaceExport = exportedSymbols.find(({exportAs}) => exportAs === '*');
+  if (namespaceExport) {
+    return t.identifier(nullthrows(namespaceExport.symbol));
   } else {
     return t.objectExpression(
       bundleGraph.getExportedSymbols(asset, bundle).map(v => {
