@@ -16,6 +16,7 @@ import type {
   FunctionDeclaration,
   Identifier,
   LVal,
+  ObjectExpression,
   ObjectProperty,
   Statement,
   StringLiteral,
@@ -698,20 +699,36 @@ export function link({
               .map(a => {
                 return FAKE_INIT_TEMPLATE({
                   INIT: getIdentifier(a, 'init'),
-                  EXPORTS: getExportNamespaceExpression(path, bundleGraph, a),
+                  EXPORTS: getExportNamespaceExpression(
+                    path,
+                    bundleGraph,
+                    a,
+                    bundle,
+                  ),
                 });
               }),
           );
           for (let decl of decls) {
             path.scope.registerDeclaration(decl);
-            let returnId = decl.get<NodePath<Identifier>>(
-              'body.body.0.argument',
-            );
+            let returnId = decl.get<
+              NodePath<Identifier> | NodePath<ObjectExpression>,
+            >('body.body.0.argument');
 
-            // TODO Somehow deferred/excluded assets are referenced, causing this function to
-            // become `function $id$init() { return {}; }` (because of the ReferencedIdentifier visitor).
-            // But a asset that isn't here should never be referenced in the first place.
-            path.scope.getBinding(returnId.node.name)?.reference(returnId);
+            if (returnId.isIdentifier()) {
+              // TODO Somehow deferred/excluded assets are referenced, causing this function to
+              // become `function $id$init() { return {}; }` (because of the ReferencedIdentifier visitor).
+              // But a asset that isn't here should never be referenced in the first place.
+              path.scope.getBinding(returnId.node.name)?.reference(returnId);
+            } else {
+              for (let prop of returnId.get<Array<NodePath<ObjectProperty>>>(
+                'properties',
+              )) {
+                maybeReplaceIdentifier(prop.get('value'));
+                path.scope
+                  .getBinding(prop.node.value.name)
+                  ?.reference(prop.get('value'));
+              }
+            }
           }
         }
 

@@ -885,6 +885,7 @@ export default class BundleGraph {
 
     let deps = this.getDependencies(asset);
     for (let dep of deps) {
+      let depNamespace = dep.symbols.get('*')?.local === '*';
       for (let symbol of this.getUsedSymbolsDependency(dep)) {
         let resolved = this.getDependencyResolution(dep);
         if (!resolved) continue;
@@ -896,12 +897,9 @@ export default class BundleGraph {
           symbols.push(...exported);
         } else {
           let exportAs = assetSymbolsInverse.get(local);
-          if (exportAs != null) {
+          if (exportAs != null || depNamespace) {
             symbols.push({
-              asset: resolved,
-              exportSymbol: symbol,
-              symbol: dep.symbols.get(symbol)?.local,
-              loc: dep.symbols.get(symbol)?.loc,
+              ...this.resolveSymbol(resolved, symbol, boundary),
               exportAs: exportAs ?? symbol,
             });
           }

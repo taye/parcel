@@ -323,7 +323,7 @@ export function getExportNamespaceExpression(
   program: NodePath<Program>,
   bundleGraph: BundleGraph<NamedBundle>,
   asset: Asset,
-  bundle?: NamedBundle,
+  bundle: NamedBundle,
 ) {
   let exportedSymbols = bundleGraph.getExportedSymbols(asset, bundle);
   let namespaceExport = exportedSymbols.find(({exportAs}) => exportAs === '*');
@@ -331,16 +331,41 @@ export function getExportNamespaceExpression(
     return t.identifier(nullthrows(namespaceExport.symbol));
   } else {
     return t.objectExpression(
-      bundleGraph.getExportedSymbols(asset, bundle).map(v => {
-        // invariant(
-        //   program.scope.hasBinding(nullthrows(v.symbol)),
-        //   asset.filePath + ' - ' + v.symbol,
-        // );
-        return t.objectProperty(
-          t.identifier(v.exportAs),
-          t.identifier(nullthrows(v.symbol)),
-        );
-      }),
+      bundleGraph
+        .getExportedSymbols(asset, bundle)
+        .map(({symbol, exportAs, exportSymbol, asset: symbolAsset}) => {
+          if (symbol != null) {
+            return t.objectProperty(
+              t.identifier(exportAs),
+              t.identifier(symbol),
+            );
+          } else if (exportSymbol === '*') {
+            return t.objectProperty(
+              t.identifier(exportAs),
+              getExportNamespaceExpression(
+                program,
+                bundleGraph,
+                symbolAsset,
+                bundle,
+              ),
+            );
+          } else {
+            // TODO this shouldn't even be in usedSymbols
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .concat(
+          asset.meta.isES6Module
+            ? [
+                // TODO why do shared bundle imports sometimes need interop?
+                t.objectProperty(
+                  t.identifier('__esModule'),
+                  t.booleanLiteral(true),
+                ),
+              ]
+            : [],
+        ),
     );
   }
 }
