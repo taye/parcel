@@ -5,17 +5,29 @@ import type {
   Bundle,
   BundleGroup,
   MutableBundleGraph,
+  PluginOptions,
 } from '@parcel/types';
+import type {SchemaEntity} from '@parcel/utils';
 
 import invariant from 'assert';
 import {Bundler} from '@parcel/plugin';
-import {md5FromString} from '@parcel/utils';
+import {loadConfig, md5FromString, validateSchema} from '@parcel/utils';
 import nullthrows from 'nullthrows';
+import path from 'path';
+import {encodeJSONKeyComponent} from '@parcel/diagnostic';
 
-const OPTIONS = {
-  minBundles: 1,
-  minBundleSize: 30000,
-  maxParallelRequests: 6,
+// Default options by http version.
+const HTTP_OPTIONS = {
+  '1': {
+    minBundles: 1,
+    minBundleSize: 30000,
+    maxParallelRequests: 6,
+  },
+  '2': {
+    minBundles: 1,
+    minBundleSize: 20000,
+    maxParallelRequests: 25,
+  },
 };
 
 export default new Bundler({
@@ -173,7 +185,10 @@ export default new Bundler({
     }
   },
 
-  optimize({bundleGraph}) {
+  async optimize({bundleGraph, options}) {
+    // TODO: make this invalidate the cache once bundling is a request.
+    let config = await loadBundlerConfig(bundleGraph, options);
+
     // Step 2: Remove asset graphs that begin with entries to other bundles.
     bundleGraph.traverseBundles(bundle => {
       if (bundle.isInline || !bundle.isSplittable) {
@@ -215,7 +230,7 @@ export default new Bundler({
             group =>
               bundleGraph
                 .getBundlesInBundleGroup(group)
-                .filter(b => !b.isInline).length < OPTIONS.maxParallelRequests,
+                .filter(b => !b.isInline).length < config.maxParallelRequests,
           )
         ) {
           bundleGraph.removeAssetGraphFromBundle(mainEntry, candidate);
@@ -263,7 +278,7 @@ export default new Bundler({
           );
         });
 
-      if (containingBundles.length > OPTIONS.minBundles) {
+      if (containingBundles.length > config.minBundles) {
         let id = containingBundles
           .map(b => b.id)
           .sort()
@@ -295,7 +310,7 @@ export default new Bundler({
       sourceBundles: Set<Bundle>,
       size: number,
     |}> = Array.from(candidateBundles.values())
-      .filter(bundle => bundle.size >= OPTIONS.minBundleSize)
+      .filter(bundle => bundle.size >= config.minBundleSize)
       .sort((a, b) => b.size - a.size);
 
     let sharedBundles = [];
@@ -316,7 +331,7 @@ export default new Bundler({
         Array.from(bundleGroups).every(
           group =>
             bundleGraph.getBundlesInBundleGroup(group).filter(b => !b.isInline)
-              .length >= OPTIONS.maxParallelRequests,
+              .length >= config.maxParallelRequests,
         )
       ) {
         continue;
@@ -348,8 +363,7 @@ export default new Bundler({
               bundleGroup =>
                 bundleGraph
                   .getBundlesInBundleGroup(bundleGroup)
-                  .filter(b => !b.isInline).length <
-                OPTIONS.maxParallelRequests,
+                  .filter(b => !b.isInline).length < config.maxParallelRequests,
             )
           ) {
             bundleGraph.removeAssetGraphFromBundle(asset, bundle);
@@ -363,7 +377,7 @@ export default new Bundler({
         if (
           bundleGraph
             .getBundlesInBundleGroup(bundleGroup)
-            .filter(b => !b.isInline).length < OPTIONS.maxParallelRequests
+            .filter(b => !b.isInline).length < config.maxParallelRequests
         ) {
           bundleGraph.addBundleToBundleGroup(sharedBundle, bundleGroup);
         }
@@ -445,4 +459,61 @@ function deduplicate(bundleGraph: MutableBundleGraph) {
       }
     }
   });
+}
+
+const CONFIG_SCHEMA: SchemaEntity = {
+  type: 'object',
+  properties: {
+    http: {
+      type: 'number',
+      enum: Object.keys(HTTP_OPTIONS).map(k => Number(k)),
+    },
+    minBundles: {
+      type: 'number',
+    },
+    minBundleSize: {
+      type: 'number',
+    },
+    maxParallelRequests: {
+      type: 'number',
+    },
+  },
+};
+
+async function loadBundlerConfig(
+  bundleGraph: MutableBundleGraph,
+  options: PluginOptions,
+) {
+  let result = await loadConfig(
+    options.inputFS,
+    path.join(options.projectRoot, 'index'),
+    ['package.json'],
+  );
+
+  let config = result?.config['@parcel/bundler-default'];
+  if (!config) {
+    return HTTP_OPTIONS['2'];
+  }
+
+  invariant(result != null);
+
+  validateSchema.diagnostic(
+    CONFIG_SCHEMA,
+    config,
+    result.files[0].filePath,
+    result.config,
+    '@parcel/bundler-default',
+    `/${encodeJSONKeyComponent('@parcel/bundler-default')}`,
+    'Invalid config for @parcel/bundler-default',
+  );
+
+  let http = config.http ?? 2;
+  let defaults = HTTP_OPTIONS[http];
+
+  return {
+    minBundles: config.minBundles ?? defaults.minBundles,
+    minBundleSize: config.minBundleSize ?? defaults.minBundleSize,
+    maxParallelRequests:
+      config.maxParallelRequests ?? defaults.maxParallelRequests,
+  };
 }
