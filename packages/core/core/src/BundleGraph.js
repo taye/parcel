@@ -854,56 +854,28 @@ export default class BundleGraph {
   }
 
   getExportedSymbols(asset: Asset, boundary: ?Bundle) {
-    let assetSymbols = asset.symbols;
-    if (!assetSymbols) {
+    if (!asset.symbols) {
       return [];
     }
 
-    let assetSymbolsInverse = new Map(
-      [...assetSymbols].map(([key, val]) => [val.local, key]),
-    );
-    let assetSymbolsUsed = this.getUsedSymbolsAsset(asset);
-
     let symbols = [];
 
-    let assetUsedAll = assetSymbolsUsed.has('*');
-    for (let symbol of assetSymbols.keys()) {
-      if (assetUsedAll || assetSymbolsUsed.has(symbol)) {
-        // symbols.push({
-        //   ...this.resolveSymbol(asset, symbol, boundary),
-        //   exportAs: symbol,
-        // });
-        symbols.push({
-          asset,
-          exportSymbol: symbol,
-          symbol: nullthrows(assetSymbols.get(symbol)).local,
-          loc: nullthrows(assetSymbols.get(symbol)).loc,
-          exportAs: symbol,
-        });
-      }
+    for (let symbol of asset.symbols.keys()) {
+      symbols.push({
+        ...this.resolveSymbol(asset, symbol, boundary),
+        exportAs: symbol,
+      });
     }
 
     let deps = this.getDependencies(asset);
     for (let dep of deps) {
-      let depNamespace = dep.symbols.get('*')?.local === '*';
-      for (let symbol of this.getUsedSymbolsDependency(dep)) {
+      if (dep.symbols.get('*')?.local === '*') {
         let resolved = this.getDependencyResolution(dep);
         if (!resolved) continue;
-        let local = dep.symbols.get(symbol)?.local;
-        if (symbol === '*' && local === '*') {
-          let exported = this.getExportedSymbols(resolved, boundary)
-            .filter(s => s.exportSymbol !== 'default')
-            .map(s => ({...s, exportAs: s.exportSymbol}));
-          symbols.push(...exported);
-        } else {
-          let exportAs = assetSymbolsInverse.get(local);
-          if (exportAs != null || depNamespace) {
-            symbols.push({
-              ...this.resolveSymbol(resolved, symbol, boundary),
-              exportAs: exportAs ?? symbol,
-            });
-          }
-        }
+        let exported = this.getExportedSymbols(resolved, boundary)
+          .filter(s => s.exportSymbol !== 'default')
+          .map(s => ({...s, exportAs: s.exportSymbol}));
+        symbols.push(...exported);
       }
     }
 

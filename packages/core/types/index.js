@@ -276,6 +276,7 @@ export interface Symbols // eslint-disable-next-line no-undef
   get(exportSymbol: Symbol): ?{|local: Symbol, loc: ?SourceLocation|};
   hasExportSymbol(exportSymbol: Symbol): boolean;
   hasLocalSymbol(local: Symbol): boolean;
+  exportSymbols(): Iterable<Symbol>;
   // Whether static analysis bailed out
   +isCleared: boolean;
 }
@@ -709,7 +710,7 @@ export interface BundleGraph<TBundle: Bundle> {
   getExportedSymbols(
     asset: Asset,
     boundary: ?Bundle,
-  ): Array<ExportSymbolResolution>;
+  ): ?Array<ExportSymbolResolution>;
   traverseBundles<TContext>(
     visit: GraphVisitor<TBundle, TContext>,
     startBundle: ?Bundle,

@@ -18,6 +18,7 @@ import type {
   LVal,
   ObjectExpression,
   ObjectProperty,
+  Program,
   Statement,
   StringLiteral,
   VariableDeclaration,
@@ -31,6 +32,7 @@ import template from '@babel/template';
 import * as t from '@babel/types';
 import {
   isAssignmentExpression,
+  isBooleanLiteral,
   isExpressionStatement,
   isIdentifier,
   isObjectPattern,
@@ -431,6 +433,28 @@ export function link({
     }
   }
 
+  function registerIdOrObject(
+    program: NodePath<Program>,
+    path: NodePath<ObjectExpression | Identifier>,
+  ) {
+    if (path.isIdentifier()) {
+      // TODO Somehow deferred/excluded assets are referenced, causing this function to
+      // become `function $id$init() { return {}; }` (because of the ReferencedIdentifier visitor).
+      // But a asset that isn't here should never be referenced in the first place.
+      // $FlowFixMe is *is* an Identifier
+      maybeReplaceIdentifier(path);
+      // $FlowFixMe is *is* an Identifier
+      program.scope.getBinding(path.node.name)?.reference(path);
+    } else {
+      for (let prop of path.get<Array<NodePath<ObjectProperty>>>(
+        'properties',
+      )) {
+        if (isBooleanLiteral(prop.node.value)) continue;
+        registerIdOrObject(program, prop.get('value'));
+      }
+    }
+  }
+
   traverse(ast, {
     CallExpression(path) {
       let {arguments: args, callee} = path.node;
@@ -697,6 +721,17 @@ export function link({
             ([...referencedAssets]: Array<Asset>)
               .filter(a => !wrappedAssets.has(a.id))
               .map(a => {
+                // if (
+                //   getIdentifier(a, 'init').name ===
+                //   '$fbc48608ca6814c8188e358f3908eab$init'
+                // ) {
+                //   console.log(a.filePath);
+                //   console.log(
+                //     bundleGraph.getExportedSymbols(a, bundle),
+                //     getExportedSymbolsShallow(bundleGraph, a, bundle),
+                //     // getExportNamespaceExpression(path, bundleGraph, a, bundle).properties,
+                //   );
+                // }
                 return FAKE_INIT_TEMPLATE({
                   INIT: getIdentifier(a, 'init'),
                   EXPORTS: getExportNamespaceExpression(
@@ -714,22 +749,12 @@ export function link({
               NodePath<Identifier> | NodePath<ObjectExpression>,
             >('body.body.0.argument');
 
-            if (returnId.isIdentifier()) {
-              // TODO Somehow deferred/excluded assets are referenced, causing this function to
-              // become `function $id$init() { return {}; }` (because of the ReferencedIdentifier visitor).
-              // But a asset that isn't here should never be referenced in the first place.
-              path.scope.getBinding(returnId.node.name)?.reference(returnId);
-            } else {
-              for (let prop of returnId.get<Array<NodePath<ObjectProperty>>>(
-                'properties',
-              )) {
-                maybeReplaceIdentifier(prop.get('value'));
-                path.scope
-                  .getBinding(prop.node.value.name)
-                  ?.reference(prop.get('value'));
-              }
-            }
+            registerIdOrObject(path, returnId);
           }
+        }
+
+        if (process.env.PARCEL_BUILD_ENV !== 'production') {
+          verifyScopeState(path.scope);
         }
 
         // Generate exports

@@ -247,6 +247,7 @@ export function verifyScopeState(scope: Scope) {
     invariant(aPath === bPath, name);
     invariant(aId === bId, name);
     invariant(aScope === bScope, name);
+    // console.log(a, b, aReferencePaths.length, bReferencePaths.length);
     invariant.deepStrictEqual(a, b, name);
 
     invariant(aConstantViolations.length === bConstantViolations.length, name);
@@ -325,14 +326,15 @@ export function getExportNamespaceExpression(
   asset: Asset,
   bundle: NamedBundle,
 ) {
-  let exportedSymbols = bundleGraph.getExportedSymbols(asset, bundle);
-  let namespaceExport = exportedSymbols.find(({exportAs}) => exportAs === '*');
-  if (namespaceExport) {
+  let exportedSymbols = getExportedSymbolsShallow(bundleGraph, asset, bundle);
+  let namespaceExport = exportedSymbols?.find(({exportAs}) => exportAs === '*');
+  if (!exportedSymbols) {
+    return t.identifier(assertString(asset.meta.exportsIdentifier));
+  } else if (namespaceExport) {
     return t.identifier(nullthrows(namespaceExport.symbol));
   } else {
     return t.objectExpression(
-      bundleGraph
-        .getExportedSymbols(asset, bundle)
+      exportedSymbols
         .map(({symbol, exportAs, exportSymbol, asset: symbolAsset}) => {
           if (symbol != null) {
             return t.objectProperty(
@@ -368,4 +370,95 @@ export function getExportNamespaceExpression(
         ),
     );
   }
+}
+
+export function getExportedSymbolsShallow(
+  bundleGraph: BundleGraph<NamedBundle>,
+  asset: Asset,
+  boundary: ?NamedBundle,
+) {
+  let assetSymbols = asset.symbols;
+  if (assetSymbols.isCleared) {
+    return null;
+  }
+
+  let assetSymbolsInverse = new Map(
+    [...assetSymbols].map(([key, val]) => [val.local, key]),
+  );
+  let assetSymbolsUsed = bundleGraph.getUsedSymbolsAsset(asset);
+
+  let symbols = [];
+
+  if (assetSymbolsUsed.size > 0 && assetSymbols.hasExportSymbol('*')) {
+    return [
+      {
+        asset,
+        exportSymbol: '*',
+        symbol: nullthrows(assetSymbols.get('*')).local,
+        loc: nullthrows(assetSymbols.get('*')).loc,
+        exportAs: '*',
+      },
+    ];
+  }
+
+  let assetUsedAll = assetSymbolsUsed.has('*');
+  for (let symbol of assetSymbols.exportSymbols()) {
+    if (assetUsedAll || assetSymbolsUsed.has(symbol)) {
+      // symbols.push({
+      //   ...this.resolveSymbol(asset, symbol, boundary),
+      //   exportAs: symbol,
+      // });
+      symbols.push({
+        asset,
+        exportSymbol: symbol,
+        symbol: nullthrows(assetSymbols.get(symbol)).local,
+        loc: nullthrows(assetSymbols.get(symbol)).loc,
+        exportAs: symbol,
+      });
+    }
+  }
+
+  let deps = bundleGraph.getDependencies(asset);
+  for (let dep of deps) {
+    let depNamespace = dep.symbols.get('*')?.local === '*';
+    for (let symbol of bundleGraph.getUsedSymbolsDependency(dep)) {
+      let resolved = bundleGraph.getDependencyResolution(dep);
+      if (!resolved) continue;
+      let local = dep.symbols.get(symbol)?.local;
+      if (symbol === '*' && local === '*') {
+        let exported = getExportedSymbolsShallow(
+          bundleGraph,
+          resolved,
+          boundary,
+        );
+        if (exported) {
+          symbols.push(
+            ...exported
+              .filter(s => s.exportSymbol !== 'default')
+              .map(s => ({...s, exportAs: s.exportSymbol})),
+          );
+        } else {
+          invariant(false);
+        }
+      } else {
+        // TODO ?
+        // console.log(
+        //   'XYZ',
+        //   dep.sourcePath,
+        //   dep.moduleSpecifier,
+        //   dep.symbols,
+        //   symbol,
+        // );
+        // let exportAs = assetSymbolsInverse.get(local);
+        // if (exportAs != null || depNamespace) {
+        //   symbols.push({
+        //     ...this.resolveSymbol(resolved, symbol, boundary),
+        //     exportAs: exportAs ?? symbol,
+        //   });
+        // }
+      }
+    }
+  }
+
+  return symbols;
 }

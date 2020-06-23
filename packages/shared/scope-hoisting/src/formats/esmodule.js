@@ -134,19 +134,9 @@ export function generateExports(
   let exportedIdentifiersBailout = new Map<Symbol, [Asset, Symbol]>();
   let entry = bundle.getMainEntry();
   if (entry) {
-    for (let {
-      exportAs,
-      exportSymbol,
-      symbol,
-      asset,
-      loc,
-    } of bundleGraph.getExportedSymbols(entry, bundle)) {
-      // console.log(entry.filePath, {
-      //   asset: asset.filePath,
-      //   exportSymbol,
-      //   symbol,
-      //   exportAs,
-      // });
+    for (let {exportAs, exportSymbol, symbol, asset, loc} of nullthrows(
+      bundleGraph.getExportedSymbols(entry, bundle),
+    )) {
       if (symbol != null) {
         symbol = replacements.get(symbol) || symbol;
 
