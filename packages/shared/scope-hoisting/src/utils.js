@@ -4,6 +4,7 @@ import type {
   BundleGraph,
   MutableAsset,
   NamedBundle,
+  ExportSymbolResolution,
   SourceLocation,
 } from '@parcel/types';
 import type {NodePath, Scope, VariableDeclarationKind} from '@babel/traverse';
@@ -376,7 +377,7 @@ export function getExportedSymbolsShallow(
   bundleGraph: BundleGraph<NamedBundle>,
   asset: Asset,
   boundary: ?NamedBundle,
-) {
+): ?Array<ExportSymbolResolution> {
   let assetSymbols = asset.symbols;
   if (assetSymbols.isCleared) {
     return null;
@@ -441,21 +442,13 @@ export function getExportedSymbolsShallow(
           invariant(false);
         }
       } else {
-        // TODO ?
-        // console.log(
-        //   'XYZ',
-        //   dep.sourcePath,
-        //   dep.moduleSpecifier,
-        //   dep.symbols,
-        //   symbol,
-        // );
-        // let exportAs = assetSymbolsInverse.get(local);
-        // if (exportAs != null || depNamespace) {
-        //   symbols.push({
-        //     ...this.resolveSymbol(resolved, symbol, boundary),
-        //     exportAs: exportAs ?? symbol,
-        //   });
-        // }
+        let exportAs = assetSymbolsInverse.get(local);
+        if (exportAs != null || (depNamespace && symbol !== '*')) {
+          symbols.push({
+            ...bundleGraph.resolveSymbol(resolved, symbol, boundary),
+            exportAs: exportAs ?? symbol,
+          });
+        }
       }
     }
   }

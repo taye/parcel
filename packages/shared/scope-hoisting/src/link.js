@@ -723,7 +723,7 @@ export function link({
               .map(a => {
                 // if (
                 //   getIdentifier(a, 'init').name ===
-                //   '$fbc48608ca6814c8188e358f3908eab$init'
+                //   '$d9e2ac2e43e9b70c7840a9a1a82e9$init'
                 // ) {
                 //   console.log(a.filePath);
                 //   console.log(
